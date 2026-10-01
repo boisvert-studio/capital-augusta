@@ -24,5 +24,4 @@ typings/
 # dotenv environment variables file
 .env
 
-# Production files
-dist
+# dist/ is committed: jsDelivr serves the tagged build from the repo
