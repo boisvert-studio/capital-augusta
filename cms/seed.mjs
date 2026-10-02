@@ -49,9 +49,9 @@ await upsert('equipe', seed.equipe, (r) => r.key, (r) => ({ role: r.role, courri
 await upsert('conciergerie', seed.conciergerie, (r) => r.key, (r) => ({ telephone: r.telephone }));
 await upsert('promotions', seed.promotions, (r) => r.key, (r) => ({
   texte: r.texte, lien: r.lien || undefined, active: r.active, portee: opt('promotions', 'portee', r.portee) }));
-await upsert('immeubles', seed.immeubles, (r) => r.code, (r) => {
+await upsert('immeuble', seed.immeubles, (r) => r.code, (r) => {
   const f = {
-    code: r.code, secteur: opt('immeubles', 'secteur', r.secteur), latitude: r.latitude, longitude: r.longitude,
+    code: r.code, secteur: opt('immeuble', 'secteur', r.secteur), latitude: r.latitude, longitude: r.longitude,
     'nombre-de-logements': r['nombre-de-logements'], 'loyer-a-partir-de': r['loyer-a-partir-de'],
     inclus: ids('commodites', r.inclus), 'en-option-payant': ids('commodites', r['en-option']),
     gestionnaire: ref.equipe[r.gestionnaire], concierge: ref.conciergerie[r.concierge],
@@ -64,10 +64,10 @@ await upsert('immeubles', seed.immeubles, (r) => r.code, (r) => {
   return f;
 });
 await upsert('types-de-logement', seed.types, (r) => r.key, (r) => ({
-  immeuble: ref.immeubles[r.immeuble], type: opt('types-de-logement', 'type', r.type), designation: r.designation,
+  immeuble: ref.immeuble[r.immeuble], type: opt('types-de-logement', 'type', r.type), designation: r.designation,
   'superficie-min-pi2': r['superficie-min'], 'superficie-max-pi2': r['superficie-max'],
   'loyer-a-partir-de': r['loyer-a-partir-de'], ...(r.plan ? { plan: { url: r.plan, alt: r.name } } : {}) }));
 await upsert('logements', seed.logements, (r) => r.code, (r) => ({
-  code: r.code, immeuble: ref.immeubles[r.immeuble], 'type-de-logement': ref['types-de-logement'][r.type],
+  code: r.code, immeuble: ref.immeuble[r.immeuble], 'type-de-logement': ref['types-de-logement'][r.type],
   numero: r.numero, etage: r.etage, loyer: r.loyer, 'disponible-le': r['disponible-le'], 'superficie-pi2': r.superficie }));
 console.log(DRY ? 'dry run, nothing written' : 'seed done');

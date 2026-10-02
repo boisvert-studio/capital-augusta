@@ -2,7 +2,8 @@
 // (available count is computed on the page, so no field for it). Métro slots carry minutes +
 // metres, as the approved design shows them; Q04's « line » field is not displayed, so dropped.
 // Order matters: a collection can only reference collections created before it.
-// `ref` names the target collection's slug. Field slugs are the ones Webflow derived from the
+// `ref` names the target collection's slug. Collection slugs = URL paths: /immeuble/<item>,
+// /local-commercial/<item> (singular, so the static /immeubles and /commercial pages can exist). Field slugs are the ones Webflow derived from the
 // display names at creation (verified 2026-10-02): the API ignores a `slug` sent on create and
 // can't change it afterwards, so `slug` here records Webflow's value, used as the API key.
 const SECTORS = ['Le Plateau-Mont-Royal', 'Villeray', 'Rosemont–La Petite-Patrie',
@@ -46,7 +47,7 @@ export const COLLECTIONS = [
     ],
   },
   {
-    displayName: 'Immeubles', singularName: 'Immeuble', slug: 'immeubles',
+    displayName: 'Immeubles', singularName: 'Immeuble', slug: 'immeuble',
     fields: [
       { type: 'PlainText', displayName: 'Code', slug: 'code', isRequired: true, helpText: 'Code du fichier maître, ex. SHE450. Clé d’import, ne pas modifier.' },
       { type: 'Option', displayName: 'Secteur', slug: 'secteur', metadata: opt(SECTORS) },
@@ -70,7 +71,7 @@ export const COLLECTIONS = [
   {
     displayName: 'Types de logement', singularName: 'Type de logement', slug: 'types-de-logement',
     fields: [
-      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeubles', isRequired: true },
+      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeuble', isRequired: true },
       { type: 'Option', displayName: 'Type', slug: 'type', metadata: opt(TYPES) },
       { type: 'PlainText', displayName: 'Désignation', slug: 'designation', helpText: 'Studio, 1 c.c., 2 c.c. (traduit en anglais)' },
       { type: 'Number', displayName: 'Superficie min (pi²)', slug: 'superficie-min-pi2' },
@@ -84,7 +85,7 @@ export const COLLECTIONS = [
     displayName: 'Appartements', singularName: 'Appartement', slug: 'logements',
     fields: [
       { type: 'PlainText', displayName: 'Code', slug: 'code', isRequired: true, helpText: 'Code immeuble + numéro, ex. SHE450-115. Clé d’import.' },
-      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeubles', isRequired: true },
+      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeuble', isRequired: true },
       { type: 'Reference', displayName: 'Type de logement', slug: 'type-de-logement', ref: 'types-de-logement' },
       { type: 'PlainText', displayName: 'Numéro', slug: 'numero' },
       { type: 'Number', displayName: 'Étage', slug: 'etage' },
@@ -96,16 +97,16 @@ export const COLLECTIONS = [
     ],
   },
   {
-    displayName: 'Immeubles commerciaux', singularName: 'Immeuble commercial', slug: 'commercial',
+    displayName: 'Immeubles commerciaux', singularName: 'Immeuble commercial', slug: 'local-commercial',
     fields: [
-      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeubles', isRequired: true },
+      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeuble', isRequired: true },
       { type: 'Number', displayName: 'Nombre de locaux', slug: 'nombre-de-locaux' },
     ],
   },
   {
     displayName: 'Locaux commerciaux', singularName: 'Local commercial', slug: 'locaux-commerciaux',
     fields: [
-      { type: 'Reference', displayName: 'Immeuble commercial', slug: 'immeuble-commercial', ref: 'commercial', isRequired: true },
+      { type: 'Reference', displayName: 'Immeuble commercial', slug: 'immeuble-commercial', ref: 'local-commercial', isRequired: true },
       { type: 'PlainText', displayName: 'Adresse civique', slug: 'adresse-civique' },
       { type: 'Option', displayName: 'Usage', slug: 'usage', metadata: opt(USAGES) },
       { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie-pi2' },
