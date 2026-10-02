@@ -1,0 +1,117 @@
+// The CMS schema as code: the 9 collections decided in Q04 (2026-09-23), corrected by Q12
+// (available count is computed on the page, so no field for it). Métro slots carry minutes +
+// metres, as the approved design shows them; Q04's « line » field is not displayed, so dropped.
+// Order matters: a collection can only reference collections created before it.
+// `ref` names the target collection's slug.
+const SECTORS = ['Le Plateau-Mont-Royal', 'Villeray', 'Rosemont–La Petite-Patrie',
+  'Ville-Marie (centre-ville)', 'Saint-Laurent', 'Outremont / Mile End'];
+const TYPES = ['1½', '2½', '3½', '4½', '5½'];
+const USAGES = ['Commerce de détail', 'Bureau', 'Restauration', 'Atelier / entrepôt', 'Espace de service'];
+
+const opt = (names) => ({ options: names.map((name) => ({ name })) });
+const metro = (n) => [
+  { type: 'PlainText', displayName: `Métro ${n} — station`, slug: `metro-${n}-station` },
+  { type: 'Number', displayName: `Métro ${n} — minutes à pied`, slug: `metro-${n}-minutes` },
+  { type: 'Number', displayName: `Métro ${n} — mètres`, slug: `metro-${n}-metres` },
+];
+
+export const COLLECTIONS = [
+  {
+    displayName: 'Commodités', singularName: 'Commodité', slug: 'commodites',
+    fields: [
+      { type: 'PlainText', displayName: 'Icône', slug: 'icone', helpText: 'Nom de l’icône (laundry, gym, garage…)' },
+      { type: 'Option', displayName: 'Catégorie', slug: 'categorie', metadata: opt(['Commodité', 'Service']) },
+    ],
+  },
+  {
+    displayName: 'Conciergerie', singularName: 'Concierge', slug: 'conciergerie',
+    fields: [{ type: 'Phone', displayName: 'Téléphone', slug: 'telephone' }],
+  },
+  {
+    displayName: 'Équipe', singularName: 'Membre', slug: 'equipe',
+    fields: [
+      { type: 'PlainText', displayName: 'Rôle', slug: 'role' },
+      { type: 'Email', displayName: 'Courriel', slug: 'courriel' },
+    ],
+  },
+  {
+    displayName: 'Promotions', singularName: 'Promotion', slug: 'promotions',
+    fields: [
+      { type: 'PlainText', displayName: 'Texte', slug: 'texte' },
+      { type: 'Link', displayName: 'Lien', slug: 'lien' },
+      { type: 'Switch', displayName: 'Active', slug: 'active' },
+      { type: 'Option', displayName: 'Portée', slug: 'portee', metadata: opt(['Immeuble', 'Site']) },
+    ],
+  },
+  {
+    displayName: 'Immeubles', singularName: 'Immeuble', slug: 'immeubles',
+    fields: [
+      { type: 'PlainText', displayName: 'Code', slug: 'code', isRequired: true, helpText: 'Code du fichier maître, ex. SHE450. Clé d’import, ne pas modifier.' },
+      { type: 'Option', displayName: 'Secteur', slug: 'secteur', metadata: opt(SECTORS) },
+      { type: 'Number', displayName: 'Latitude', slug: 'latitude' },
+      { type: 'Number', displayName: 'Longitude', slug: 'longitude' },
+      { type: 'Number', displayName: 'Nombre de logements', slug: 'nombre-de-logements' },
+      { type: 'Number', displayName: 'Loyer à partir de', slug: 'loyer-a-partir-de', helpText: 'Votre prix d’appel affiché sur la fiche.' },
+      { type: 'MultiReference', displayName: 'Inclus', slug: 'inclus', ref: 'commodites' },
+      { type: 'MultiReference', displayName: 'En option (payant)', slug: 'en-option', ref: 'commodites' },
+      { type: 'Reference', displayName: 'Gestionnaire', slug: 'gestionnaire', ref: 'equipe' },
+      { type: 'Reference', displayName: 'Concierge', slug: 'concierge', ref: 'conciergerie' },
+      { type: 'Switch', displayName: 'Concierge à venir', slug: 'concierge-a-venir' },
+      { type: 'Reference', displayName: 'Promotion', slug: 'promotion', ref: 'promotions' },
+      { type: 'MultiImage', displayName: 'Galerie', slug: 'galerie' },
+      ...metro(1), ...metro(2), ...metro(3),
+      { type: 'PlainText', displayName: 'Lignes d’autobus', slug: 'lignes-autobus', helpText: 'Séparées par des virgules, ex. 24, 31, 125' },
+      { type: 'PlainText', displayName: 'Titre SEO', slug: 'titre-seo' },
+      { type: 'PlainText', displayName: 'Description SEO', slug: 'description-seo' },
+    ],
+  },
+  {
+    displayName: 'Types de logement', singularName: 'Type de logement', slug: 'types-de-logement',
+    fields: [
+      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeubles', isRequired: true },
+      { type: 'Option', displayName: 'Type', slug: 'type', metadata: opt(TYPES) },
+      { type: 'PlainText', displayName: 'Désignation', slug: 'designation', helpText: 'Studio, 1 c.c., 2 c.c. (traduit en anglais)' },
+      { type: 'Number', displayName: 'Superficie min (pi²)', slug: 'superficie-min' },
+      { type: 'Number', displayName: 'Superficie max (pi²)', slug: 'superficie-max' },
+      { type: 'Number', displayName: 'Loyer à partir de', slug: 'loyer-a-partir-de' },
+      { type: 'Image', displayName: 'Plan', slug: 'plan' },
+      { type: 'MultiImage', displayName: 'Photos', slug: 'photos' },
+    ],
+  },
+  {
+    displayName: 'Appartements', singularName: 'Appartement', slug: 'logements',
+    fields: [
+      { type: 'PlainText', displayName: 'Code', slug: 'code', isRequired: true, helpText: 'Code immeuble + numéro, ex. SHE450-115. Clé d’import.' },
+      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeubles', isRequired: true },
+      { type: 'Reference', displayName: 'Type de logement', slug: 'type-de-logement', ref: 'types-de-logement' },
+      { type: 'PlainText', displayName: 'Numéro', slug: 'numero' },
+      { type: 'Number', displayName: 'Étage', slug: 'etage' },
+      { type: 'Number', displayName: 'Loyer', slug: 'loyer' },
+      { type: 'DateTime', displayName: 'Disponible le', slug: 'disponible-le' },
+      { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie' },
+      { type: 'RichText', displayName: 'Description', slug: 'description' },
+      { type: 'MultiImage', displayName: 'Photos', slug: 'photos' },
+    ],
+  },
+  {
+    displayName: 'Immeubles commerciaux', singularName: 'Immeuble commercial', slug: 'commercial',
+    fields: [
+      { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeubles', isRequired: true },
+      { type: 'Number', displayName: 'Nombre de locaux', slug: 'nombre-de-locaux' },
+    ],
+  },
+  {
+    displayName: 'Locaux commerciaux', singularName: 'Local commercial', slug: 'locaux-commerciaux',
+    fields: [
+      { type: 'Reference', displayName: 'Immeuble commercial', slug: 'immeuble-commercial', ref: 'commercial', isRequired: true },
+      { type: 'PlainText', displayName: 'Adresse civique', slug: 'adresse-civique' },
+      { type: 'Option', displayName: 'Usage', slug: 'usage', metadata: opt(USAGES) },
+      { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie' },
+      { type: 'PlainText', displayName: 'Étage', slug: 'etage' },
+      { type: 'Number', displayName: 'Loyer ($/pi²)', slug: 'prix-pi2' },
+      { type: 'Number', displayName: 'Frais additionnels ($/pi²)', slug: 'frais-additionnels-pi2' },
+      { type: 'PlainText', displayName: 'Description', slug: 'description' },
+      { type: 'DateTime', displayName: 'Disponible le', slug: 'disponible-le' },
+    ],
+  },
+];
