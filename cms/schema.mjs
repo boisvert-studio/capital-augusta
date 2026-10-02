@@ -2,7 +2,9 @@
 // (available count is computed on the page, so no field for it). Métro slots carry minutes +
 // metres, as the approved design shows them; Q04's « line » field is not displayed, so dropped.
 // Order matters: a collection can only reference collections created before it.
-// `ref` names the target collection's slug.
+// `ref` names the target collection's slug. Field slugs are the ones Webflow derived from the
+// display names at creation (verified 2026-10-02): the API ignores a `slug` sent on create and
+// can't change it afterwards, so `slug` here records Webflow's value, used as the API key.
 const SECTORS = ['Le Plateau-Mont-Royal', 'Villeray', 'Rosemont–La Petite-Patrie',
   'Ville-Marie (centre-ville)', 'Saint-Laurent', 'Outremont / Mile End'];
 const TYPES = ['1½', '2½', '3½', '4½', '5½'];
@@ -10,9 +12,9 @@ const USAGES = ['Commerce de détail', 'Bureau', 'Restauration', 'Atelier / entr
 
 const opt = (names) => ({ options: names.map((name) => ({ name })) });
 const metro = (n) => [
-  { type: 'PlainText', displayName: `Métro ${n} — station`, slug: `metro-${n}-station` },
-  { type: 'Number', displayName: `Métro ${n} — minutes à pied`, slug: `metro-${n}-minutes` },
-  { type: 'Number', displayName: `Métro ${n} — mètres`, slug: `metro-${n}-metres` },
+  { type: 'PlainText', displayName: `Métro ${n} — station`, slug: `metro-${n}----station` },
+  { type: 'Number', displayName: `Métro ${n} — minutes à pied`, slug: `metro-${n}----minutes-a-pied` },
+  { type: 'Number', displayName: `Métro ${n} — mètres`, slug: `metro-${n}----metres` },
 ];
 
 export const COLLECTIONS = [
@@ -53,14 +55,14 @@ export const COLLECTIONS = [
       { type: 'Number', displayName: 'Nombre de logements', slug: 'nombre-de-logements' },
       { type: 'Number', displayName: 'Loyer à partir de', slug: 'loyer-a-partir-de', helpText: 'Votre prix d’appel affiché sur la fiche.' },
       { type: 'MultiReference', displayName: 'Inclus', slug: 'inclus', ref: 'commodites' },
-      { type: 'MultiReference', displayName: 'En option (payant)', slug: 'en-option', ref: 'commodites' },
+      { type: 'MultiReference', displayName: 'En option (payant)', slug: 'en-option-payant', ref: 'commodites' },
       { type: 'Reference', displayName: 'Gestionnaire', slug: 'gestionnaire', ref: 'equipe' },
       { type: 'Reference', displayName: 'Concierge', slug: 'concierge', ref: 'conciergerie' },
       { type: 'Switch', displayName: 'Concierge à venir', slug: 'concierge-a-venir' },
       { type: 'Reference', displayName: 'Promotion', slug: 'promotion', ref: 'promotions' },
       { type: 'MultiImage', displayName: 'Galerie', slug: 'galerie' },
       ...metro(1), ...metro(2), ...metro(3),
-      { type: 'PlainText', displayName: 'Lignes d’autobus', slug: 'lignes-autobus', helpText: 'Séparées par des virgules, ex. 24, 31, 125' },
+      { type: 'PlainText', displayName: 'Lignes d’autobus', slug: 'lignes-d-autobus', helpText: 'Séparées par des virgules, ex. 24, 31, 125' },
       { type: 'PlainText', displayName: 'Titre SEO', slug: 'titre-seo' },
       { type: 'PlainText', displayName: 'Description SEO', slug: 'description-seo' },
     ],
@@ -71,8 +73,8 @@ export const COLLECTIONS = [
       { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeubles', isRequired: true },
       { type: 'Option', displayName: 'Type', slug: 'type', metadata: opt(TYPES) },
       { type: 'PlainText', displayName: 'Désignation', slug: 'designation', helpText: 'Studio, 1 c.c., 2 c.c. (traduit en anglais)' },
-      { type: 'Number', displayName: 'Superficie min (pi²)', slug: 'superficie-min' },
-      { type: 'Number', displayName: 'Superficie max (pi²)', slug: 'superficie-max' },
+      { type: 'Number', displayName: 'Superficie min (pi²)', slug: 'superficie-min-pi2' },
+      { type: 'Number', displayName: 'Superficie max (pi²)', slug: 'superficie-max-pi2' },
       { type: 'Number', displayName: 'Loyer à partir de', slug: 'loyer-a-partir-de' },
       { type: 'Image', displayName: 'Plan', slug: 'plan' },
       { type: 'MultiImage', displayName: 'Photos', slug: 'photos' },
@@ -88,7 +90,7 @@ export const COLLECTIONS = [
       { type: 'Number', displayName: 'Étage', slug: 'etage' },
       { type: 'Number', displayName: 'Loyer', slug: 'loyer' },
       { type: 'DateTime', displayName: 'Disponible le', slug: 'disponible-le' },
-      { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie' },
+      { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie-pi2' },
       { type: 'RichText', displayName: 'Description', slug: 'description' },
       { type: 'MultiImage', displayName: 'Photos', slug: 'photos' },
     ],
@@ -106,9 +108,9 @@ export const COLLECTIONS = [
       { type: 'Reference', displayName: 'Immeuble commercial', slug: 'immeuble-commercial', ref: 'commercial', isRequired: true },
       { type: 'PlainText', displayName: 'Adresse civique', slug: 'adresse-civique' },
       { type: 'Option', displayName: 'Usage', slug: 'usage', metadata: opt(USAGES) },
-      { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie' },
+      { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie-pi2' },
       { type: 'PlainText', displayName: 'Étage', slug: 'etage' },
-      { type: 'Number', displayName: 'Loyer ($/pi²)', slug: 'prix-pi2' },
+      { type: 'Number', displayName: 'Loyer ($/pi²)', slug: 'loyer-pi2' },
       { type: 'Number', displayName: 'Frais additionnels ($/pi²)', slug: 'frais-additionnels-pi2' },
       { type: 'PlainText', displayName: 'Description', slug: 'description' },
       { type: 'DateTime', displayName: 'Disponible le', slug: 'disponible-le' },
