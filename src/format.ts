@@ -30,7 +30,7 @@ const MONTHS = [
   'december',
 ];
 
-const parseEnglishDate = (text: string) => {
+export const parseEnglishDate = (text: string) => {
   const t = text.trim().toLowerCase().replace(',', '');
   const m = t.match(/^([a-z]+) (\d{1,2}) (\d{4})$/) ?? t.match(/^(\d{1,2}) ([a-z]+) (\d{4})$/);
   if (!m) return null;
