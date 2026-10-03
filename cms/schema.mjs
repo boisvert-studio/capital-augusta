@@ -69,6 +69,7 @@ export const COLLECTIONS = [
       { type: 'MultiReference', displayName: 'Types offerts', slug: 'types-offerts', ref: 'types-de-logement', deferred: true,
         helpText: 'Types de logement de cet immeuble (alimente le filtre « Type »).' },
       { type: 'MultiImage', displayName: 'Galerie', slug: 'galerie' },
+      { type: 'Image', displayName: 'Photo principale', slug: 'photo-principale', helpText: 'Photo de la carte et de l’aperçu de partage. Par défaut, la 1re photo de la galerie.' },
       ...metro(1), ...metro(2), ...metro(3),
       { type: 'PlainText', displayName: 'Lignes d’autobus', slug: 'lignes-d-autobus', helpText: 'Séparées par des virgules, ex. 24, 31, 125' },
       { type: 'PlainText', displayName: 'Titre SEO', slug: 'titre-seo' },
