@@ -78,3 +78,13 @@ Snaps (no easing) under 900px or with `prefers-reduced-motion`.
 | `data-ca-hero-interval` | the container | Optional milliseconds per image (default 6000). |
 
 Runs only while the hero is at least 15% visible and the tab is visible; still under reduced motion.
+
+## keys.ts
+
+Filter keys that cannot come from a nested list (Webflow allows two nested lists per page; the building cards use both for amenities). A flat hidden list provides them instead.
+
+| Attribute | On | Effect |
+|---|---|---|
+| `data-ca-key-for` | one item per key in a flat hidden collection list, value `CODE` | Its text is copied into the matching card as `<span fs-list-field="FIELD">value</span>`. |
+| `data-ca-key-field` | the same item | The Finsweet field name, e.g. `type`. |
+| `data-ca-keys` | hidden container inside each card, value `CODE` | Receives the spans. If Finsweet has already started, its list module is restarted. |
