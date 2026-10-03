@@ -19,7 +19,8 @@ export async function api(method, url, body) {
       headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json', accept: 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
     });
-    if (res.status === 429) { await sleep((Number(res.headers.get('retry-after')) || 2) * 1000); continue; }
+    // Site publish is limited to one per minute; other endpoints recover in a few seconds.
+    if (res.status === 429) { await sleep(Math.max(Number(res.headers.get('retry-after')) || 0, url.endsWith('/publish') ? 20 : 2) * 1000); continue; }
     const text = await res.text();
     const json = text ? JSON.parse(text) : {};
     if (!res.ok) throw new Error(`${method} ${url} → ${res.status} ${text.slice(0, 400)}`);

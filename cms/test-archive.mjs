@@ -22,8 +22,12 @@ async function status(url) {
   return res.status;
 }
 
-const before = await find();
+let before = await find();
 if (!before) throw new Error(`${CODE} not found in ${units.slug}`);
+if (before.isArchived) { // left archived by an interrupted run: restore first
+  await api('PATCH', `/collections/${units.id}/items/${before.id}`, { isArchived: false });
+  before = await find();
+}
 const url = `${host}/${units.slug}/${before.fieldData.slug}`;
 console.log('unit', CODE, '→', url, '| live status now:', await status(url));
 
