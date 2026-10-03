@@ -1,0 +1,142 @@
+/* Filters bar: CSS reference for src/filters-bar.ts
+ *
+ * Where it lives: Webflow, not the bundle. Layout, spacing, type and colour are built in the
+ * Designer on the classes below (Client-First naming; rename freely, the script only looks
+ * at the data attributes). The rules marked EMBED cannot be expressed in the Designer
+ * (calc() on custom properties, color-mix(), blur driven by a variable), so they go once in
+ * site head code inside a <style> tag.
+ *
+ * Why not injected at runtime: the bar exists in the Designer, so its styles belong there
+ * and show on the canvas. Runtime injection would arrive after first paint (a flash of the
+ * unstyled pill) and would hide the look from the person editing it. map/ injects CSS only
+ * because its pins are created by script and do not exist in the Designer.
+ *
+ * What the script writes on [data-ca-bar]:
+ *   top: Npx          position under the nav, or riding with the hero slot
+ *   --m               morph progress, 0 (pill in the hero) to 1 (strip under the nav)
+ *   --cta             1 to 0 as the bar morphs (first half)
+ *   --meta            0 to 1 as the bar morphs (second half)
+ *   .is-docked        class, once --m is above 0.985
+ * Under 900px, or with reduced motion, --m jumps between 0 and 1 (no easing).
+ *
+ * Page tokens assumed (define yours): --ca-paper, --ca-line, --ca-nav-h (height of the pinned
+ * nav, set on :root; the script reads it).
+ */
+
+/* -- Slot: reserves the pill's place in the hero. Its height must equal the pill's resting
+      height; re-check it at every breakpoint where the bar's layout changes. ------------ */
+.bar_slot {
+  margin-top: 48px;
+  height: 66px;
+}
+
+/* -- EMBED: the bar. position:fixed; top is set by the script. -------------------------- */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--ca-nav-h, 72px); /* before the script runs */
+  z-index: 40;
+  pointer-events: none; /* only the row takes clicks, so the page stays scrollable around it */
+  --m: 0;
+  --cta: 1;
+  --meta: 0;
+  background: color-mix(in srgb, transparent, var(--ca-paper) calc(var(--m) * 100%));
+  border-bottom: 1px solid color-mix(in srgb, transparent, var(--ca-line) calc(var(--m) * 100%));
+  -webkit-backdrop-filter: blur(calc(var(--m) * 10px));
+  backdrop-filter: blur(calc(var(--m) * 10px));
+  will-change: top;
+}
+
+/* The row: a white pill at rest, a bare row on the strip. */
+.bar_row {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, #fff, transparent calc(var(--m) * 100%));
+  border-radius: calc((1 - var(--m)) * 12px);
+  box-shadow:
+    0 10px 30px rgba(22, 28, 50, calc((1 - var(--m)) * 0.14)),
+    0 2px 8px rgba(22, 28, 50, calc((1 - var(--m)) * 0.1));
+}
+
+/* Facet dividers fade a little on the strip. */
+.bar_field {
+  border-right: 1px solid
+    color-mix(in srgb, var(--ca-line), transparent calc((1 - var(--m)) * 45%));
+}
+.bar_field:last-child {
+  border-right: none;
+}
+
+/* CTA: fades and collapses as the bar docks. The script also sets `inert` on it at --cta 0. */
+.bar_cta {
+  flex: 0 0 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-left: calc(var(--cta) * 14px);
+  opacity: var(--cta);
+  max-width: calc(var(--cta) * 260px);
+}
+.bar.is-docked .bar_cta {
+  pointer-events: none;
+}
+
+/* Meta (count + chips): fades in once the CTA is gone. `inert` is set at --meta 0. */
+.bar_meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: var(--meta);
+  max-width: calc(var(--meta) * 680px);
+}
+.bar:not(.is-docked) .bar_meta {
+  pointer-events: none;
+}
+
+/* -- Target: lands clear of the nav and the docked strip when the CTA scrolls to it. -- */
+[data-ca-bar-target] {
+  scroll-margin-top: calc(var(--ca-nav-h, 72px) + 56px);
+}
+
+/* -- Mobile. Facets cannot stay in one shrink-wrapped row: the bar goes full width, facets
+      become a grid, the CTA becomes a full-width button under them, and the docked strip
+      shows the meta row beneath the facets. Designer-buildable except the --m maths above. -- */
+@media (max-width: 720px) {
+  .bar_slot {
+    margin-top: 32px;
+    height: 207px; /* 2x2 facets + full-width CTA at 40px touch targets; keep in step with the bar */
+  }
+  .bar_row {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    padding: 6px;
+  }
+  .bar:not(.is-docked) .bar_cta {
+    flex: 1 1 100%;
+    max-width: none;
+    margin: 8px 4px 2px;
+    min-height: 46px;
+    justify-content: center;
+  }
+  .bar.is-docked .bar_cta {
+    display: none;
+  }
+  .bar:not(.is-docked) .bar_meta {
+    display: none;
+  }
+  .bar.is-docked .bar_meta {
+    flex: 1 1 100%;
+    max-width: none;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 8px 8px 4px;
+    margin-top: 2px;
+    border-top: 1px solid var(--ca-line);
+  }
+}
