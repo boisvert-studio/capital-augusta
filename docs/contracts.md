@@ -87,4 +87,4 @@ Filter keys that cannot come from a nested list (Webflow allows two nested lists
 |---|---|---|
 | `data-ca-key-for` | one item per key in a flat hidden collection list, value `CODE` | Its text is copied into the matching card as `<span fs-list-field="FIELD">value</span>`. |
 | `data-ca-key-field` | the same item | The Finsweet field name, e.g. `type`. |
-| `data-ca-keys` | hidden container inside each card, value `CODE` | Receives the spans. If Finsweet has already started, its list module is restarted. |
+| `data-ca-keys` | hidden container inside each card, value `CODE` | Receives one span per field with the values joined by spaces (`1½ 3½`): Finsweet reads only the first element of a field outside a nested list, so the matching select needs `fs-list-operator="contain"`. If Finsweet has already started, its list module is restarted. |
