@@ -1,7 +1,9 @@
 // The CMS schema as code: the 9 collections decided in Q04 (2026-09-23), corrected by Q12
 // (available count is computed on the page, so no field for it). Métro slots carry minutes +
 // metres, as the approved design shows them; Q04's « line » field is not displayed, so dropped.
-// Order matters: a collection can only reference collections created before it.
+// Order matters: a collection can only reference collections created before it. A field marked
+// `deferred: true` points forward (Immeubles → Types de logement); create-schema adds it in a
+// second pass once every collection exists.
 // `ref` names the target collection's slug. Collection slugs = URL paths: /immeuble/<item>,
 // /local-commercial/<item> (singular, so the static /immeubles and /commercial pages can exist). Field slugs are the ones Webflow derived from the
 // display names at creation (verified 2026-10-02): the API ignores a `slug` sent on create and
@@ -61,6 +63,11 @@ export const COLLECTIONS = [
       { type: 'Reference', displayName: 'Concierge', slug: 'concierge', ref: 'conciergerie' },
       { type: 'Switch', displayName: 'Concierge à venir', slug: 'concierge-a-venir' },
       { type: 'Reference', displayName: 'Promotion', slug: 'promotion', ref: 'promotions' },
+      // Plan §2 (2026-10-02): a forward multi-ref so the Home « Type » filter and the card's
+      // « N types » can read the building's types (Webflow nests only forward references).
+      // Written by the seed, derived from Types de logement.
+      { type: 'MultiReference', displayName: 'Types offerts', slug: 'types-offerts', ref: 'types-de-logement', deferred: true,
+        helpText: 'Types de logement de cet immeuble (alimente le filtre « Type »).' },
       { type: 'MultiImage', displayName: 'Galerie', slug: 'galerie' },
       ...metro(1), ...metro(2), ...metro(3),
       { type: 'PlainText', displayName: 'Lignes d’autobus', slug: 'lignes-d-autobus', helpText: 'Séparées par des virgules, ex. 24, 31, 125' },
@@ -88,7 +95,11 @@ export const COLLECTIONS = [
       { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeuble', isRequired: true },
       { type: 'Reference', displayName: 'Type de logement', slug: 'type-de-logement', ref: 'types-de-logement' },
       { type: 'PlainText', displayName: 'Numéro', slug: 'numero' },
+      // `etage` stays numeric for sorting (the seed writes SS = -1, RC = 0). The design prints the
+      // floor as the master writes it (« SS », « RC », « 2 »), which a Number can't hold, so the
+      // label is its own field (added 2026-10-02).
       { type: 'Number', displayName: 'Étage', slug: 'etage' },
+      { type: 'PlainText', displayName: 'Étage affiché', slug: 'etage-affiche', helpText: 'Tel qu’affiché : SS, RC, 1, 2…' },
       { type: 'Number', displayName: 'Loyer', slug: 'loyer' },
       { type: 'DateTime', displayName: 'Disponible le', slug: 'disponible-le' },
       { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie-pi2' },
@@ -108,6 +119,9 @@ export const COLLECTIONS = [
     fields: [
       { type: 'Reference', displayName: 'Immeuble commercial', slug: 'immeuble-commercial', ref: 'local-commercial', isRequired: true },
       { type: 'PlainText', displayName: 'Adresse civique', slug: 'adresse-civique' },
+      // Plan §2: copied from the building so the commercial « Quartier » filter and card sub-line
+      // can read it on the space itself (the building sits two references away).
+      { type: 'Option', displayName: 'Secteur', slug: 'secteur', metadata: opt(SECTORS) },
       { type: 'Option', displayName: 'Usage', slug: 'usage', metadata: opt(USAGES) },
       { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie-pi2' },
       { type: 'PlainText', displayName: 'Étage', slug: 'etage' },
