@@ -82,7 +82,7 @@ export const COLLECTIONS = [
     ],
   },
   {
-    displayName: 'Appartements', singularName: 'Appartement', slug: 'logements',
+    displayName: 'Appartements', singularName: 'Appartement', slug: 'logement',
     fields: [
       { type: 'PlainText', displayName: 'Code', slug: 'code', isRequired: true, helpText: 'Code immeuble + numéro, ex. SHE450-115. Clé d’import.' },
       { type: 'Reference', displayName: 'Immeuble', slug: 'immeuble', ref: 'immeuble', isRequired: true },
