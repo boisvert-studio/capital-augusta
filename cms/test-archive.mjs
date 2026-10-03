@@ -8,7 +8,7 @@ import { api, collectionsBySlug, allItems, SITE_ID } from './lib.mjs';
 const CODE = process.argv[2] ?? 'SHE450-115';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const cols = await collectionsBySlug();
-const units = cols.logements;
+const units = cols.logement;
 const site = await api('GET', `/sites/${SITE_ID}`);
 const host = `https://${site.shortName}.webflow.io`;
 
