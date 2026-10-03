@@ -10,6 +10,9 @@ import { MAP_STYLE } from './style';
 // Whatever hides an item (a filter, pagination) dims its pin, so the map follows the list
 // without knowing which library did the filtering.
 //
+// An item may also carry `data-count` (written by counts.ts): the number of available units.
+// The pin then shows it, and turns into a hollow ring at zero.
+//
 // The Mapbox token is read from site settings (`window.CA_CONFIG.mapboxToken`), so rotating
 // it never needs a rebuild.
 
@@ -24,14 +27,24 @@ const GL_VERSION = '3.9.0';
 const GL_BASE = `https://api.mapbox.com/mapbox-gl-js/v${GL_VERSION}/mapbox-gl`;
 const BOOT_TIMEOUT_MS = 8000;
 
-type Item = { key: string; el: HTMLElement; lng: number; lat: number; name: string; href: string };
+type Item = {
+  key: string;
+  el: HTMLElement;
+  lng: number;
+  lat: number;
+  name: string;
+  href: string;
+  count: number | null;
+};
 type Pin = { marker: Marker; el: HTMLElement };
 
 const CSS = `
 .ca-pin{width:22px;height:22px;border-radius:50%;background:#D1AA41;border:2px solid #161C32;
+  display:flex;align-items:center;justify-content:center;color:#161C32;font:700 11px/1 sans-serif;
   box-shadow:0 0 0 3px rgba(209,170,65,.28);cursor:pointer;transition:opacity .15s,transform .15s}
 .ca-pin:hover,.ca-pin:focus-visible{transform:scale(1.15);outline:none;box-shadow:0 0 0 4px rgba(209,170,65,.5)}
 .ca-pin.is-dim{opacity:.25;pointer-events:none}
+.ca-pin.is-empty{background:transparent;border-color:#D1AA41}
 [data-ca-map] .mapboxgl-ctrl-group{background:rgba(22,28,50,.82);border:1px solid rgba(209,170,65,.28)}
 [data-ca-map] .mapboxgl-ctrl-group button span{filter:invert(1) brightness(1.6)}
 [data-ca-map] .mapboxgl-ctrl-attrib{background:rgba(22,28,50,.6)}
@@ -41,6 +54,11 @@ const CSS = `
 const isFrench = () => (document.documentElement.lang || 'fr').toLowerCase().startsWith('fr');
 
 const num = (v: string | undefined) => (v ? Number(v.replace(',', '.').replace(/\s/g, '')) : NaN);
+
+const readCount = (v: string | undefined) => {
+  const n = v === undefined || v.trim() === '' ? NaN : Number(v);
+  return Number.isFinite(n) ? n : null;
+};
 
 const readItems = (): Item[] =>
   [...document.querySelectorAll<HTMLElement>('[data-ca-map-item]')].flatMap((el) => {
@@ -56,6 +74,7 @@ const readItems = (): Item[] =>
         lng,
         name: el.dataset.name || el.textContent?.trim() || '',
         href: link?.href || '',
+        count: readCount(el.dataset.count),
       },
     ];
   });
@@ -92,7 +111,26 @@ const fail = (container: HTMLElement) => {
   container.setAttribute('hidden', '');
 };
 
-const pinLabel = (item: Item) => item.name;
+const pinLabel = (item: Item) => {
+  if (item.count === null) return item.name;
+  if (isFrench()) {
+    const what =
+      item.count === 0
+        ? 'aucun logement disponible'
+        : `${item.count} logement${item.count > 1 ? 's' : ''} disponible${item.count > 1 ? 's' : ''}`;
+    return `${item.name} — ${what}`;
+  }
+  const what = item.count === 0 ? 'no units available' : `${item.count} available`;
+  return `${item.name} — ${what}`;
+};
+
+// Keeps a pin's count, hollow state and label in step with its item.
+const paintPin = (el: HTMLElement, item: Item) => {
+  const text = item.count === null || item.count === 0 ? '' : String(item.count);
+  if (el.textContent !== text) el.textContent = text;
+  el.classList.toggle('is-empty', item.count === 0);
+  el.setAttribute('aria-label', pinLabel(item));
+};
 
 export const initMap = async (container: HTMLElement) => {
   const token = window.CA_CONFIG?.mapboxToken;
@@ -151,7 +189,7 @@ export const initMap = async (container: HTMLElement) => {
     el.className = 'ca-pin';
     el.tabIndex = 0;
     el.setAttribute('role', 'link');
-    el.setAttribute('aria-label', pinLabel(item));
+    paintPin(el, item);
     const go = () => item.href && window.location.assign(item.href);
     el.addEventListener('click', go);
     el.addEventListener('keydown', (e) => {
@@ -169,7 +207,11 @@ export const initMap = async (container: HTMLElement) => {
   let firstFit = true;
   const sync = () => {
     const items = readItems();
-    items.forEach((item) => pins.has(item.key) || addPin(item));
+    items.forEach((item) => {
+      const pin = pins.get(item.key);
+      if (pin) paintPin(pin.el, item);
+      else addPin(item);
+    });
     const shown = new Set(items.filter((i) => isShown(i.el)).map((i) => i.key));
     pins.forEach(({ el }, key) => {
       const off = !shown.has(key);
@@ -214,7 +256,7 @@ export const initMap = async (container: HTMLElement) => {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['style', 'class', 'hidden'],
+        attributeFilter: ['style', 'class', 'hidden', 'data-count'],
       })
     );
   });
