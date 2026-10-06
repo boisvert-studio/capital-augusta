@@ -24,6 +24,8 @@ Codes (`CODE` below) are the building code from the CMS, matched case-insensitiv
 
 Config: `window.CA_CONFIG.mapboxToken` in site head code. The map dims a pin when its item is hidden (display none, `hidden`, removed), so any filter library works.
 
+**Space mode** (`data-ca-map-counts="space"`, the commercial page): the building items can sit in a hidden list. A pin is shown while at least one shown `[data-ca-comm-space]` carries its item key, so it follows the filtered space cards. Labels count spaces (« 1 local disponible », « aucun local disponible »). Each pin carries `data-key` (the item key) and takes class `is-active` for card-hover highlighting.
+
 ## counts.ts
 
 Available units per building. Count source: `data-ca-unit`. Archived units are not rendered, so they do not count. Items are counted by presence in the DOM, hidden or not.
