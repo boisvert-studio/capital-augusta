@@ -199,9 +199,4 @@ export const EN: Record<string, string> = {
   'Responsable de la protection des renseignements personnels':
     'Person in charge of the protection of personal information',
   'Coordonnatrice, Capital Augusta': 'Coordinator, Capital Augusta',
-
-  // English → English: the building and unit template embeds write these in English already.
-  // Drop when the embeds' EN branches move into fiche.ts.
-  'Who is the concierge for this building?': 'Who is the superintendent for this building?',
-  'Apply for this unit →': 'Ask about this unit →',
 };
