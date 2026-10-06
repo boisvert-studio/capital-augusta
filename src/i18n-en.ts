@@ -48,6 +48,7 @@ export const EN: Record<string, string> = {
 
   // Building cards
   logements: 'units',
+  Logements: 'Apartments',
   logement: 'unit',
   'Aucun libre': 'None available',
   'À partir de': 'From',
@@ -129,6 +130,7 @@ export const EN: Record<string, string> = {
   'L’immeuble': 'The building',
   Adresse: 'Address',
   'Aussi dans l’immeuble': 'Also in the building',
+  'Aucun local disponible actuellement': 'No space available right now',
   'Location commerciale': 'Commercial leasing',
   'Responsable — locaux commerciaux': 'Commercial leasing',
 
@@ -144,6 +146,13 @@ export const EN: Record<string, string> = {
     'Sending didn’t work. Try again, or call us at 514 529-8063.',
   'Montréal (Québec) H2H 1K1': 'Montréal, Quebec H2H 1K1',
   'Type de demande': 'Request type',
+  // Form names (aria-labels only; the submitted form name stays French for the inbox)
+  'Demande de location': 'Rental request',
+  'Demande de location success': 'Rental request sent',
+  'Demande de location failure': 'Rental request not sent',
+  'Demande générale': 'General request',
+  'Demande générale success': 'General request sent',
+  'Demande générale failure': 'General request not sent',
   'Envoyer →': 'Send →',
   'Envoi en cours…': 'Sending…',
   Courriel: 'Email',

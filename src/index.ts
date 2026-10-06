@@ -1,3 +1,4 @@
+import { startChips } from './chips';
 import { startCounts } from './counts';
 import { startFiltersBar } from './filters-bar';
 import { formatDates, formatNumbers } from './format';
@@ -19,5 +20,6 @@ window.Webflow.push(() => {
   startCounts(); // before the map, so pins find their data-count on first read
   startMaps();
   startFiltersBar();
+  startChips(); // chip labels from the option text, after i18n has localized it
   startHeroRotators();
 });

@@ -27,9 +27,10 @@ const norm = (s: string) =>
 
 const MAP = new Map(Object.entries(EN).map(([fr, en]) => [norm(fr), en]));
 
-// Never touch text that a script or filter reads as data.
+// Never touch text that a script or filter reads as data. Filter selects carry fs-list-field
+// too, but Finsweet reads their option `value`, so their option labels can be translated.
 const SKIP =
-  'script,style,noscript,textarea,[fs-list-field],[data-ca-key-field],[data-ca-i18n-skip]';
+  'script,style,noscript,textarea,[fs-list-field]:not(select),[data-ca-key-field],[data-ca-i18n-skip]';
 
 const ATTRS = ['aria-label', 'alt', 'title', 'placeholder', 'data-wait'];
 
@@ -38,6 +39,9 @@ const translateText = (node: Text) => {
   if (!raw || !raw.trim()) return;
   const en = MAP.get(norm(raw));
   if (en === undefined) return;
+  // An option without a value attribute submits its label: translating it would change the value.
+  const option = node.parentElement?.closest('option');
+  if (option && !option.hasAttribute('value')) return;
   const lead = raw.match(/^\s*/)?.[0] ?? '';
   const trail = raw.match(/\s*$/)?.[0] ?? '';
   node.nodeValue = lead + en + trail;
