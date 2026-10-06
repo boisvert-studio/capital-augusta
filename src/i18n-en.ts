@@ -16,6 +16,7 @@ export const EN: Record<string, string> = {
   'Photographies des immeubles : Gaëtane Lefranc': 'Building photography: Gaëtane Lefranc',
   'Capital Augusta — accueil': 'Capital Augusta — home',
   'Fil d’Ariane': 'Breadcrumb',
+  Langue: 'Language', // locale switcher aria-label (Nav)
 
   // Home hero and filters
   immeubles: 'buildings',
