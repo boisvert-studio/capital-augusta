@@ -154,6 +154,37 @@ const fillCommercialStats = () => {
   });
 };
 
+// -- 4. Unit types per building card ------------------------------------------------------
+
+// « N types » on a building card, counted from the hidden Types list (one item per unit type,
+// `[data-ca-key-for=CODE][data-ca-key-field=type]`), so nothing is kept by hand. The card's
+// `.spec_pair` (number, word) stays hidden until it has a count. Moved from the Styles
+// component embed in v0.4.7.
+const fillTypeCounts = () => {
+  const types = new Map<string, Set<string>>();
+  document
+    .querySelectorAll<HTMLElement>('[data-ca-key-for][data-ca-key-field="type"]')
+    .forEach((el) => {
+      const code = norm(el.dataset.caKeyFor);
+      const value = el.textContent?.trim();
+      if (!code || !value) return;
+      const set = types.get(code) ?? new Set<string>();
+      set.add(value);
+      types.set(code, set);
+    });
+  if (!types.size) return;
+
+  document.querySelectorAll<HTMLElement>('.spec_pair').forEach((pair) => {
+    const card = pair.closest('.building-card_component');
+    const code = norm(card?.querySelector<HTMLElement>('[data-ca-count-for]')?.dataset.caCountFor);
+    const n = types.get(code)?.size ?? 0;
+    if (!n || pair.children.length < 2) return;
+    writeText(pair.children[0] as HTMLElement, String(n));
+    writeText(pair.children[1] as HTMLElement, n > 1 ? 'types' : 'type');
+    pair.classList.add('is-on');
+  });
+};
+
 // -- Start --------------------------------------------------------------------------------
 
 const refresh = () => {
@@ -161,6 +192,7 @@ const refresh = () => {
   fillMapCounts();
   fillCommercialStats();
   fillAvailability();
+  fillTypeCounts();
 };
 
 export const startCounts = () => {

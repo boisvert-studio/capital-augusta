@@ -1,5 +1,6 @@
 import { startChips } from './chips';
 import { startCounts } from './counts';
+import { startFiche } from './fiche';
 import { startFiltersBar } from './filters-bar';
 import { formatDates, formatNumbers } from './format';
 import { startHeroRotators } from './hero-rotator';
@@ -18,6 +19,7 @@ window.Webflow.push(() => {
   formatDates();
   startKeys(); // filter keys first, so Finsweet sees them
   startCounts(); // before the map, so pins find their data-count on first read
+  startFiche(); // building, unit and commercial fiches; after counts, which sets the unit badge
   startMaps();
   startFiltersBar();
   startChips(); // chip labels from the option text, after i18n has localized it
