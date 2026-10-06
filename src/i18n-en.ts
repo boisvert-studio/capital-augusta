@@ -86,7 +86,7 @@ export const EN: Record<string, string> = {
   'Plan d’étage à venir': 'Floor plan coming soon',
   'Plan d’étage du logement': 'Unit floor plan',
   'Ce logement m’intéresse': 'I’m interested',
-  'Faire une demande pour ce logement →': 'Apply for this unit →',
+  'Faire une demande pour ce logement →': 'Ask about this unit →',
   'Qu’est-ce qui est inclus dans le loyer ?': 'What’s included in the rent?',
   'Quand ce logement est-il disponible ?': 'When is this unit available?',
   'Libre maintenant.': 'Available now.',
@@ -145,7 +145,8 @@ export const EN: Record<string, string> = {
     'Thank you! Your message has been sent. Our team will get back to you shortly.',
   'L’envoi n’a pas fonctionné. Réessayez, ou appelez-nous au 514 529-8063.':
     'Sending didn’t work. Try again, or call us at 514 529-8063.',
-  'Montréal (Québec) H2H 1K1': 'Montréal, Quebec H2H 1K1',
+  'Montréal (Québec) H2H 1K1': 'Montréal QC H2H 1K1',
+  '2152, avenue du Mont-Royal Est': '2152 avenue du Mont-Royal Est',
   'Type de demande': 'Request type',
   // Form names (aria-labels only; the submitted form name stays French for the inbox)
   'Demande de location': 'Rental request',
@@ -165,7 +166,7 @@ export const EN: Record<string, string> = {
   'Notre savoir-faire': 'What we do',
   'Entretien rapide': 'Fast maintenance',
   'Équipe de construction complète': 'Full construction team',
-  'Conciergerie 7 jours': '7-day concierge',
+  'Conciergerie 7 jours': 'Superintendents 7 days a week',
   'Une gestion de proximité': 'Hands-on management',
   'Des immeubles de toutes tailles': 'Buildings of every size',
   'Notre approche': 'Our approach',
@@ -174,7 +175,9 @@ export const EN: Record<string, string> = {
 
   // Careers
   'Temps plein · plusieurs quartiers': 'Full-time · several neighbourhoods',
-  'Concierge d’immeuble': 'Building concierge',
+  'Concierge d’immeuble': 'Building superintendent',
+  // Apply button's mailto subject (see localizeMailto in i18n.ts)
+  'Candidature — Concierge d’immeuble': 'Application — Building superintendent',
   'Volet entretien ménager': 'Housekeeping',
   'Entretien des parties communes : planchers, corridors, escaliers et vestibules.':
     'Upkeep of common areas: floors, corridors, stairwells and vestibules.',
@@ -196,4 +199,9 @@ export const EN: Record<string, string> = {
   'Responsable de la protection des renseignements personnels':
     'Person in charge of the protection of personal information',
   'Coordonnatrice, Capital Augusta': 'Coordinator, Capital Augusta',
+
+  // English → English: the building and unit template embeds write these in English already.
+  // Drop when the embeds' EN branches move into fiche.ts.
+  'Who is the concierge for this building?': 'Who is the superintendent for this building?',
+  'Apply for this unit →': 'Ask about this unit →',
 };
