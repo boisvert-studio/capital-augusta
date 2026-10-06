@@ -64,6 +64,8 @@ const translateAttrs = (el: Element) => {
 const localizeHref = (a: HTMLAnchorElement) => {
   const href = a.getAttribute('href');
   if (!href || !href.startsWith('/') || href.startsWith('//')) return;
+  // Locale switcher links (and any explicit alternate) already point at their own language.
+  if (a.hasAttribute('hreflang')) return;
   if (href === PREFIX || href.startsWith(PREFIX + '/') || href.startsWith(PREFIX + '?')) return;
   a.setAttribute('href', href === '/' ? PREFIX : PREFIX + href);
 };
