@@ -70,6 +70,32 @@ const localizeHref = (a: HTMLAnchorElement) => {
   a.setAttribute('href', href === '/' ? PREFIX : PREFIX + href);
 };
 
+// A mailto subject is part of the href, so the text pass never sees it.
+const localizeMailto = (a: HTMLAnchorElement) => {
+  const href = a.getAttribute('href');
+  if (!href?.startsWith('mailto:')) return;
+  const m = href.match(/([?&]subject=)([^&]*)/);
+  if (!m) return;
+  const en = MAP.get(norm(decodeURIComponent(m[2])));
+  if (en !== undefined) a.setAttribute('href', href.replace(m[0], m[1] + encodeURIComponent(en)));
+};
+
+// The CMS floor value follows a « · floor » label, which reads « · floor Ground » in English.
+// Ground and basement take the word order English uses; numbered floors stay « · floor 2 ».
+const FLOOR_PHRASES: Record<string, string> = { Ground: 'ground floor', Basement: 'basement' };
+
+const phraseFloors = (root: Element) => {
+  const sel = '[data-cc="etage"],[data-cs="etage"]';
+  const els = root.matches(sel) ? [root] : [...root.querySelectorAll(sel)];
+  els.forEach((el) => {
+    const phrase = FLOOR_PHRASES[norm(el.textContent ?? '')];
+    const label = el.previousSibling;
+    if (!phrase || !label || !/floor$/.test(norm(label.textContent ?? ''))) return;
+    label.textContent = (label.textContent ?? '').replace(/floor\s*$/, '');
+    el.textContent = phrase;
+  });
+};
+
 const walk = (root: Node) => {
   if (root.nodeType === Node.TEXT_NODE) {
     const parent = root.parentElement;
@@ -82,7 +108,10 @@ const walk = (root: Node) => {
   elements.forEach((el) => {
     if (el.closest(SKIP)) return;
     translateAttrs(el);
-    if (el instanceof HTMLAnchorElement) localizeHref(el);
+    if (el instanceof HTMLAnchorElement) {
+      localizeHref(el);
+      localizeMailto(el);
+    }
   });
 
   const texts = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -92,6 +121,7 @@ const walk = (root: Node) => {
         : NodeFilter.FILTER_REJECT,
   });
   for (let n = texts.nextNode(); n; n = texts.nextNode()) translateText(n as Text);
+  phraseFloors(root);
 };
 
 // "1,450" followed by " $" or " $ / month" becomes "$1,450" followed by " / month".
