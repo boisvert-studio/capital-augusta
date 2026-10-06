@@ -103,10 +103,33 @@
   scroll-margin-top: calc(var(--ca-nav-h, 72px) + 56px);
 }
 
+/* -- Tablet (768-991, as deployed in the Home and /commercial embeds). The one-row pill is
+      wider than the container here (929px on Home). The bar goes full width, the facets
+      share one row (flex 1 1 auto), the CTA drops to a full-width row under them, and the
+      docked strip shows the meta row under the facets. .bar_slot height is 144px at this
+      breakpoint (Webflow class, tablet). ------------------------------------------------ */
+@media (min-width: 768px) and (max-width: 991px) {
+  .bar_row { display: flex; flex-wrap: wrap; width: 100%; padding: 6px; }
+  .bar_form-block { flex: 1 1 100%; }
+  .bar_form { width: 100%; }
+  .bar_field { flex: 1 1 auto; min-width: 0; padding: 8px 8px 8px 12px; margin-right: 0; }
+  .bar_field:nth-last-child(2) { border-right: none; } /* last child is Webflow's hidden form div */
+  .bar:not(.is-docked) .bar_cta { flex: 1 1 100%; max-width: none; margin: 8px 4px 2px; min-height: 46px; justify-content: center; }
+  .bar.is-docked .bar_cta { display: none; }
+  .bar:not(.is-docked) .bar_meta { display: none; }
+  .bar.is-docked .bar_meta { flex: 1 1 100%; max-width: none; flex-wrap: wrap; gap: 8px 12px; padding: 8px 8px 4px; margin-top: 2px; border-top: 1px solid var(--ca-line); }
+}
+
+/* -- Small desktop (992-1099): the one-row pill is 5px too wide at 992; tighter facet
+      spacing keeps it inside the container. ------------------------------------------- */
+@media (min-width: 992px) and (max-width: 1099px) {
+  .bar_field { margin-right: 18px; padding-right: 18px; }
+}
+
 /* -- Mobile. Facets cannot stay in one shrink-wrapped row: the bar goes full width, facets
       become a grid, the CTA becomes a full-width button under them, and the docked strip
       shows the meta row beneath the facets. Designer-buildable except the --m maths above. -- */
-@media (max-width: 720px) {
+@media (max-width: 767px) { /* deployed at Webflow's 767 breakpoint */
   .bar_slot {
     margin-top: 32px;
     height: 207px; /* 2x2 facets + full-width CTA at 40px touch targets; keep in step with the bar */
