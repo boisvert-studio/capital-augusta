@@ -13,6 +13,10 @@ import { MAP_STYLE } from './style';
 // An item may also carry `data-count` (written by counts.ts): the number of available units.
 // The pin then shows it, and turns into a hollow ring at zero.
 //
+// Commercial page (`data-ca-map-counts="space"` on the container): the building items sit in a
+// hidden list and the visible list holds the spaces (`data-ca-comm-space="<item key>"`). A pin
+// is then shown while one of its spaces is shown, and its label counts spaces, not units.
+//
 // The Mapbox token is read from site settings (`window.CA_CONFIG.mapboxToken`), so rotating
 // it never needs a rebuild.
 
@@ -44,6 +48,7 @@ const CSS = `
   box-shadow:0 0 0 3px rgba(209,170,65,.28);cursor:pointer;transition:opacity .15s,transform .15s}
 .ca-pin:hover,.ca-pin:focus-visible{transform:scale(1.15);outline:none;box-shadow:0 0 0 4px rgba(209,170,65,.5)}
 .ca-pin.is-dim{opacity:.25;pointer-events:none}
+.ca-pin.is-active{transform:scale(1.15);background:#fff}
 .ca-pin.is-empty{background:transparent;border-color:#D1AA41}
 [data-ca-map] .mapboxgl-ctrl-group{background:rgba(22,28,50,.82);border:1px solid rgba(209,170,65,.28)}
 [data-ca-map] .mapboxgl-ctrl-group button span{filter:invert(1) brightness(1.6)}
@@ -82,6 +87,11 @@ const readItems = (): Item[] =>
 // An item counts as shown if it takes up space: filters hide with display:none or remove it.
 const isShown = (el: HTMLElement) => el.isConnected && el.getClientRects().length > 0;
 
+const spaceShown = (key: string) =>
+  [...document.querySelectorAll<HTMLElement>('[data-ca-comm-space]')].some(
+    (el) => el.dataset.caCommSpace === key && isShown(el)
+  );
+
 const loadOnce = <T extends HTMLElement>(id: string, make: () => T) =>
   new Promise<void>((resolve, reject) => {
     if (document.getElementById(id)) return resolve();
@@ -111,8 +121,19 @@ const fail = (container: HTMLElement) => {
   container.setAttribute('hidden', '');
 };
 
-const pinLabel = (item: Item) => {
+const pinLabel = (item: Item, spaces: boolean) => {
   if (item.count === null) return item.name;
+  if (spaces) {
+    const n = item.count;
+    const what = isFrench()
+      ? n === 0
+        ? 'aucun local disponible'
+        : `${n} ${n > 1 ? 'locaux disponibles' : 'local disponible'}`
+      : n === 0
+        ? 'no space available'
+        : `${n} available`;
+    return `${item.name} — ${what}`;
+  }
   if (isFrench()) {
     const what =
       item.count === 0
@@ -125,16 +146,17 @@ const pinLabel = (item: Item) => {
 };
 
 // Keeps a pin's count, hollow state and label in step with its item.
-const paintPin = (el: HTMLElement, item: Item) => {
+const paintPin = (el: HTMLElement, item: Item, spaces: boolean) => {
   const text = item.count === null || item.count === 0 ? '' : String(item.count);
   if (el.textContent !== text) el.textContent = text;
   el.classList.toggle('is-empty', item.count === 0);
-  el.setAttribute('aria-label', pinLabel(item));
+  el.setAttribute('aria-label', pinLabel(item, spaces));
 };
 
 export const initMap = async (container: HTMLElement) => {
   const token = window.CA_CONFIG?.mapboxToken;
   if (!token) return fail(container);
+  const spaces = container.dataset.caMapCounts === 'space';
 
   let gl: typeof mapboxgl;
   try {
@@ -189,7 +211,8 @@ export const initMap = async (container: HTMLElement) => {
     el.className = 'ca-pin';
     el.tabIndex = 0;
     el.setAttribute('role', 'link');
-    paintPin(el, item);
+    el.dataset.key = item.key;
+    paintPin(el, item, spaces);
     const go = () => item.href && window.location.assign(item.href);
     el.addEventListener('click', go);
     el.addEventListener('keydown', (e) => {
@@ -209,10 +232,12 @@ export const initMap = async (container: HTMLElement) => {
     const items = readItems();
     items.forEach((item) => {
       const pin = pins.get(item.key);
-      if (pin) paintPin(pin.el, item);
+      if (pin) paintPin(pin.el, item, spaces);
       else addPin(item);
     });
-    const shown = new Set(items.filter((i) => isShown(i.el)).map((i) => i.key));
+    const shown = new Set(
+      items.filter((i) => (spaces ? spaceShown(i.key) : isShown(i.el))).map((i) => i.key)
+    );
     pins.forEach(({ el }, key) => {
       const off = !shown.has(key);
       el.classList.toggle('is-dim', off);
@@ -247,9 +272,11 @@ export const initMap = async (container: HTMLElement) => {
     window.clearTimeout(timeout);
     sync();
     // Watch the lists that hold the items, wherever they are on the page.
-    const roots = new Set(
-      readItems().map((i) => i.el.parentElement?.parentElement ?? document.body)
-    );
+    const watched = [
+      ...readItems().map((i) => i.el),
+      ...(spaces ? [...document.querySelectorAll<HTMLElement>('[data-ca-comm-space]')] : []),
+    ];
+    const roots = new Set(watched.map((el) => el.parentElement?.parentElement ?? document.body));
     const observer = new MutationObserver(queueSync);
     roots.forEach((root) =>
       observer.observe(root, {
