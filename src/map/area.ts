@@ -19,7 +19,7 @@ type ListInstance = {
 type FinsweetQueue = { push: (entry: [string, (instances: ListInstance[]) => void]) => void };
 
 const CSS = `
-.ca-area-btn{position:absolute;top:16px;left:50%;z-index:3;display:none;align-items:center;gap:8px;
+.ca-area-btn{position:absolute;top:calc(var(--ca-map-inset,0px) + 16px);left:50%;z-index:3;display:none;align-items:center;gap:8px;
   padding:8px 16px;border:1px solid rgba(22,28,50,.16);border-radius:22px;background:#fff;color:#161C32;
   font:600 13px/1.2 inherit;font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(22,28,50,.22);
   transform:translate(-50%,-8px);opacity:0;transition:opacity .22s,transform .22s,border-color .15s}

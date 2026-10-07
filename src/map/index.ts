@@ -53,6 +53,7 @@ type Pin = { marker: Marker; box: HTMLElement; el: HTMLElement };
 // the pin jumps away from the cursor and back. The marker is therefore a fixed box, and every
 // visual state lives on the pin inside it.
 const CSS = `
+[data-ca-map] .mapboxgl-ctrl-top-left,[data-ca-map] .mapboxgl-ctrl-top-right{top:var(--ca-map-inset,0px)}
 .ca-marker{width:22px;height:22px}
 .ca-marker:hover,.ca-marker.is-active{z-index:5}
 .ca-marker.is-dim{pointer-events:none}
@@ -168,6 +169,34 @@ const paintPin = (el: HTMLElement, item: Item, spaces: boolean) => {
   if (el.textContent !== text) el.textContent = text;
   el.classList.toggle('is-empty', item.count === 0);
   el.setAttribute('aria-label', pinLabel(item, spaces));
+};
+
+// The docked filter bar can cover the top of the map: on a short list (Commercial, one result)
+// the map has no room to stay sticky and scrolls under it. The covered height is published as
+// `--ca-map-inset`, and everything pinned to the map's top edge (zoom buttons, legend, area
+// button) sits below it.
+const keepClearOfBar = (container: HTMLElement) => {
+  const bar = document.querySelector<HTMLElement>('[data-ca-bar]');
+  if (!bar) return;
+  let queued = false;
+  const measure = () => {
+    queued = false;
+    const covered = Math.max(
+      0,
+      Math.round(bar.getBoundingClientRect().bottom - container.getBoundingClientRect().top)
+    );
+    const inset = `${Math.min(covered, container.offsetHeight / 2)}px`;
+    if (container.style.getPropertyValue('--ca-map-inset') !== inset)
+      container.style.setProperty('--ca-map-inset', inset);
+  };
+  const queue = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(measure);
+  };
+  measure();
+  window.addEventListener('scroll', queue, { passive: true });
+  window.addEventListener('resize', queue);
 };
 
 export const initMap = async (container: HTMLElement) => {
@@ -399,6 +428,7 @@ export const initMap = async (container: HTMLElement) => {
   map.on('load', () => {
     loaded = true;
     window.clearTimeout(timeout);
+    keepClearOfBar(container);
     addLegend(map, container, fr, spaces);
     area = setupArea({
       map,
