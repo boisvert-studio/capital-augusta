@@ -185,6 +185,41 @@ const fillTypeCounts = () => {
   });
 };
 
+// -- 5. Results count word ----------------------------------------------------------------
+
+// The word after Finsweet's results count is static Webflow text, so it read « 0 immeubles ».
+// French takes the singular for 0 and 1, English for 1 only. Only the building word is
+// handled here; Commercial's page script already words its own count (local / locaux).
+const RESULT_WORDS: Record<string, [string, string]> = {
+  immeuble: ['immeuble', 'immeubles'],
+  immeubles: ['immeuble', 'immeubles'],
+  building: ['building', 'buildings'],
+  buildings: ['building', 'buildings'],
+};
+
+const fillResultWords = () => {
+  document.querySelectorAll<HTMLElement>('[fs-list-element="results-count"]').forEach((count) => {
+    const word = count.nextElementSibling;
+    const text = word?.textContent ?? '';
+    const pair = RESULT_WORDS[text.trim()];
+    if (!word || !pair) return;
+    const n = Number((count.textContent ?? '').replace(/\D/g, ''));
+    const singular = english() ? n === 1 : n < 2;
+    const lead = text.match(/^\s*/)?.[0] ?? '';
+    writeText(word as HTMLElement, lead + pair[singular ? 0 : 1]);
+  });
+};
+
+const watchResultWords = () => {
+  const counts = document.querySelectorAll('[fs-list-element="results-count"]');
+  if (!counts.length) return;
+  fillResultWords();
+  const observer = new MutationObserver(fillResultWords);
+  counts.forEach((c) =>
+    observer.observe(c, { childList: true, characterData: true, subtree: true })
+  );
+};
+
 // -- Start --------------------------------------------------------------------------------
 
 const refresh = () => {
@@ -197,6 +232,7 @@ const refresh = () => {
 
 export const startCounts = () => {
   refresh();
+  watchResultWords();
 
   // Lists can be re-rendered after load (Finsweet pagination, load more): recount when the
   // lists that hold counted items gain or lose children.
