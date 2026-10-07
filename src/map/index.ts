@@ -1,6 +1,7 @@
 import type { Marker } from 'mapbox-gl';
 import type mapboxgl from 'mapbox-gl';
 
+import { setupArea } from './area';
 import { ICONS } from './layers';
 import { addLegend } from './legend';
 import { MAP_STYLE } from './style';
@@ -350,6 +351,9 @@ export const initMap = async (container: HTMLElement) => {
     highlight(hit.key, false);
   });
 
+  // « Rechercher dans cette zone »: while an area is set, the map keeps the visitor's view.
+  let area = { active: () => false };
+
   let firstFit = true;
   const sync = () => {
     const items = readItems();
@@ -368,6 +372,7 @@ export const initMap = async (container: HTMLElement) => {
       el.tabIndex = off ? -1 : 0;
       el.toggleAttribute('aria-hidden', off);
     });
+    if (area.active()) return;
     const pts = items.filter((i) => shown.has(i.key));
     const fit = pts.length ? pts : items;
     if (!fit.length) return;
@@ -395,6 +400,13 @@ export const initMap = async (container: HTMLElement) => {
     loaded = true;
     window.clearTimeout(timeout);
     addLegend(map, container, fr, spaces);
+    area = setupArea({
+      map,
+      container,
+      fr,
+      spaces,
+      coords: () => new Map(readItems().map((i) => [i.key, [i.lng, i.lat]])),
+    });
     sync();
     // Watch the lists that hold the items, wherever they are on the page.
     const watched = [
