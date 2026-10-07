@@ -26,6 +26,16 @@ Config: `window.CA_CONFIG.mapboxToken` in site head code. The map dims a pin whe
 
 **Space mode** (`data-ca-map-counts="space"`, the commercial page): the building items can sit in a hidden list. A pin is shown while at least one shown `[data-ca-comm-space]` carries its item key, so it follows the filtered space cards. Labels count spaces (« 1 local disponible », « aucun local disponible »). Each pin carries `data-key` (the item key) and takes class `is-active` for card-hover highlighting.
 
+**Start (v0.4.13):** the map starts only when it comes within 100 px of the screen, and never for crawlers or headless browsers (user-agent check; the container is hidden for them). Mapbox bills one map load per map started. Automated tests must send a desktop user agent.
+
+**Pins and cards (v0.4.9):** each marker is a fixed `.ca-marker` box (Mapbox positions it) holding the `.ca-pin`, which carries every visual state; never scale or transform the marker box. Hovering or focusing a pin adds `is-active` to it and `is-hot` to its card(s) (on space mode: the shown `[data-ca-comm-space]` cards with its key), and scrolls the card to the centre when it is entirely out of view. Hovering a card (delegated, so re-rendered cards work) lights its pin.
+
+**Layers and legend:** 68 métro stations (STM pictogram, names from z13) and épiceries (Mapbox `poi_label` maki=grocery, from z13.5) are drawn by `map/layers.ts`; the legend (`map/legend.ts`, top right, hidden under 900 px) gates its épicerie row on zoom.
+
+**Area search (v0.4.10):** after a visitor's own pan or zoom, « Rechercher dans cette zone » limits the list to the current view through a Finsweet `filter` hook on each list instance; the map stops refitting while an area is set. The « Zone de la carte » chip joins Finsweet's chip row in `[data-ca-bar-meta]`, or brings its own row with « Effacer »; any `[fs-list-element="clear"]` click clears the area. No URL state.
+
+**Docked bar:** the height of `[data-ca-bar]` covering the map is published as `--ca-map-inset` on the container; the zoom buttons, legend and area button sit below it.
+
 ## counts.ts
 
 Available units per building. Count source: `data-ca-unit`. Archived units are not rendered, so they do not count. Items are counted by presence in the DOM, hidden or not.
@@ -55,6 +65,14 @@ Commercial stats.
 | `data-ca-stat-label` | the stat's label element | Same three values. Writes the singular or plural word (FR singular for 0 and 1; EN for 1 only): `local commercial` / `locaux commerciaux`, `disponible` / `disponibles`, `immeuble` / `immeubles`. |
 
 The module recounts when items are added to or removed from the list that holds them (Finsweet pagination or load more).
+
+Unit types per building card (v0.4.7): `.spec_pair` inside a `.building-card_component` gets the number of distinct `[data-ca-key-for=CODE][data-ca-key-field="type"]` values for the card's `[data-ca-count-for]` code, its word (`type` / `types`) and class `is-on`.
+
+Results count word (v0.4.12): the element right after `[fs-list-element="results-count"]`, when it reads `immeuble(s)` or `building(s)`, agrees with the number (FR singular for 0 and 1, EN for 1).
+
+## fiche.ts
+
+Detail pages, moved from the template embeds in v0.4.7 (the CSS stays in the embeds). Building fiche keys on `[data-ca-code][data-ca-name]`; unit fiche on `[data-ca-unit-page]`; commercial fiche on `[data-cf-main]`. Writes French and English directly (contact links, FAQ items derived from building data, métro and bus blocks, service pills, photo lightboxes, unit inclusions and promo, commercial rates and gallery).
 
 ## filters-bar.ts
 
