@@ -82,6 +82,8 @@ export const EN: Record<string, string> = {
 
   // Unit fiche
   'Inclus dans chaque logement': 'Included in every unit',
+  // Building fiche, types row: the Plan cell reads « disponible » when the type has a plan.
+  disponible: 'available',
   'Plan type': 'Typical floor plan',
   'Plan d’étage à venir': 'Floor plan coming soon',
   'Plan d’étage du logement': 'Unit floor plan',
