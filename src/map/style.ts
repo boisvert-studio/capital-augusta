@@ -1,5 +1,7 @@
 import type { StyleSpecification } from 'mapbox-gl';
 
+import { EXTRA_LAYERS, METRO_SOURCE } from './layers';
+
 const NAVY = '#161C32';
 
 // Navy basemap drawn from Mapbox Streets v8. Streets come in three tiers (minor, mid, major)
@@ -9,6 +11,7 @@ export const MAP_STYLE: StyleSpecification = {
   glyphs: 'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
   sources: {
     mb: { type: 'vector', url: 'mapbox://mapbox.mapbox-streets-v8' },
+    metro: METRO_SOURCE,
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': NAVY } },
@@ -112,6 +115,7 @@ export const MAP_STYLE: StyleSpecification = {
         'text-halo-width': 1.4,
       },
     },
+    ...EXTRA_LAYERS,
     {
       id: 'place-labels',
       type: 'symbol',

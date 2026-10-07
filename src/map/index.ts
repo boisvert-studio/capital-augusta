@@ -1,6 +1,8 @@
 import type { Marker } from 'mapbox-gl';
 import type mapboxgl from 'mapbox-gl';
 
+import { ICONS } from './layers';
+import { addLegend } from './legend';
 import { MAP_STYLE } from './style';
 
 // Map island. Self-starts when the page holds a `[data-ca-map]` container.
@@ -16,6 +18,9 @@ import { MAP_STYLE } from './style';
 // Commercial page (`data-ca-map-counts="space"` on the container): the building items sit in a
 // hidden list and the visible list holds the spaces (`data-ca-comm-space="<item key>"`). A pin
 // is then shown while one of its spaces is shown, and its label counts spaces, not units.
+//
+// Hovering a pin highlights its card(s) and brings them into view; hovering a card highlights
+// its pin. On the commercial page the cards are the spaces of that building.
 //
 // The Mapbox token is read from site settings (`window.CA_CONFIG.mapboxToken`), so rotating
 // it never needs a rebuild.
@@ -40,16 +45,27 @@ type Item = {
   href: string;
   count: number | null;
 };
-type Pin = { marker: Marker; el: HTMLElement };
+type Pin = { marker: Marker; box: HTMLElement; el: HTMLElement };
 
+// Mapbox positions a marker with an inline transform on the element it is given. Anything
+// that scales that element (a hover `scale`, a `transform`) also scales its translation, so
+// the pin jumps away from the cursor and back. The marker is therefore a fixed box, and every
+// visual state lives on the pin inside it.
 const CSS = `
-.ca-pin{width:22px;height:22px;border-radius:50%;background:#D1AA41;border:2px solid #161C32;
+.ca-marker{width:22px;height:22px}
+.ca-marker:hover,.ca-marker.is-active{z-index:5}
+.ca-marker.is-dim{pointer-events:none}
+.ca-pin{width:22px;height:22px;box-sizing:border-box;border-radius:50%;background:#D1AA41;border:2px solid #161C32;
   display:flex;align-items:center;justify-content:center;color:#161C32;font:700 11px/1 sans-serif;
-  box-shadow:0 0 0 3px rgba(209,170,65,.28);cursor:pointer;transition:opacity .15s,transform .15s}
-.ca-pin:hover,.ca-pin:focus-visible{transform:scale(1.15);outline:none;box-shadow:0 0 0 4px rgba(209,170,65,.5)}
+  box-shadow:0 0 0 3px rgba(209,170,65,.28);cursor:pointer;transition:opacity .15s,scale .2s,background-color .2s}
+.ca-pin:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(209,170,65,.5)}
 .ca-pin.is-dim{opacity:.25;pointer-events:none}
-.ca-pin.is-active{transform:scale(1.15);background:#fff}
+.ca-pin.is-active{scale:1.12;background:#fff}
 .ca-pin.is-empty{background:transparent;border-color:#D1AA41}
+.ca-pin.is-empty.is-active{background:#fff}
+[data-ca-map-item].is-hot,[data-ca-comm-space].is-hot{border-color:#D1AA41;
+  box-shadow:0 0 0 2px #D1AA41,0 12px 28px rgba(22,28,50,.16);transform:translateY(-2px);position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){.ca-pin{transition:none}[data-ca-map-item].is-hot,[data-ca-comm-space].is-hot{transform:none}}
 [data-ca-map] .mapboxgl-ctrl-group{background:rgba(22,28,50,.82);border:1px solid rgba(209,170,65,.28)}
 [data-ca-map] .mapboxgl-ctrl-group button span{filter:invert(1) brightness(1.6)}
 [data-ca-map] .mapboxgl-ctrl-attrib{background:rgba(22,28,50,.6)}
@@ -187,6 +203,11 @@ export const initMap = async (container: HTMLElement) => {
       : undefined,
   });
   map.addControl(new gl.NavigationControl({ showCompass: false }), 'top-left');
+  // The style has no sprite: the métro and épicerie icons are drawn when first asked for.
+  map.on('styleimagemissing', (e: { id: string }) => {
+    const make = ICONS[e.id];
+    if (make && !map.hasImage(e.id)) map.addImage(e.id, make(), { pixelRatio: 3 });
+  });
 
   const pins = new Map<string, Pin>();
   let loaded = false;
@@ -206,12 +227,78 @@ export const initMap = async (container: HTMLElement) => {
     }
   });
 
+  // -- Pin ⇄ card highlight ------------------------------------------------------------
+
+  const cardsFor = (key: string) =>
+    spaces
+      ? [...document.querySelectorAll<HTMLElement>('[data-ca-comm-space]')].filter(
+          (el) => el.dataset.caCommSpace === key && isShown(el)
+        )
+      : [...document.querySelectorAll<HTMLElement>('[data-ca-map-item]')].filter(
+          (el) => el.dataset.caMapItem === key && isShown(el)
+        );
+
+  const highlight = (key: string, on: boolean) => {
+    const pin = pins.get(key);
+    pin?.el.classList.toggle('is-active', on);
+    pin?.box.classList.toggle('is-active', on);
+    cardsFor(key).forEach((card) => card.classList.toggle('is-hot', on));
+  };
+
+  // Brings the hovered pin's card into view. Debounced, so sweeping the cursor across a
+  // cluster scrolls once, for the pin it settles on. Only when the card is entirely out of
+  // view: a card half under the sticky header is already found, and scrolling for it would
+  // pull the map out from under the cursor.
+  let scrollTimer = 0;
+  // While the page scrolls for a pin, the map can slide under a still cursor (it is sticky
+  // only inside its section). That is not the visitor leaving the pin, so the highlight holds
+  // until the mouse actually moves.
+  let scrolling = false;
+  let heldKey: string | null = null;
+  let settle = 0;
+  const holdWhileScrolling = () => {
+    scrolling = true;
+    const done = () => {
+      scrolling = false;
+      window.removeEventListener('scroll', onScroll);
+    };
+    const onScroll = () => {
+      window.clearTimeout(settle);
+      settle = window.setTimeout(done, 200);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    settle = window.setTimeout(done, 400); // no scroll at all (already in place)
+  };
+  const revealCard = (key: string) => {
+    window.clearTimeout(scrollTimer);
+    scrollTimer = window.setTimeout(() => {
+      const card = cardsFor(key)[0];
+      if (!card || !pins.get(key)?.el.classList.contains('is-active')) return;
+      const r = card.getBoundingClientRect();
+      const { top } = container.getBoundingClientRect();
+      if (r.bottom > Math.max(top, 0) && r.top < window.innerHeight) return;
+      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      holdWhileScrolling();
+      card.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
+    }, 140);
+  };
+  document.addEventListener('mousemove', (e) => {
+    if (!heldKey || scrolling) return;
+    const pin = pins.get(heldKey)?.el;
+    if (pin && pin.contains(e.target as Node)) return;
+    highlight(heldKey, false);
+    heldKey = null;
+  });
+
   const addPin = (item: Item) => {
+    const box = document.createElement('div');
+    box.className = 'ca-marker';
     const el = document.createElement('div');
     el.className = 'ca-pin';
     el.tabIndex = 0;
     el.setAttribute('role', 'link');
     el.dataset.key = item.key;
+    box.append(el);
     paintPin(el, item, spaces);
     const go = () => item.href && window.location.assign(item.href);
     el.addEventListener('click', go);
@@ -221,11 +308,47 @@ export const initMap = async (container: HTMLElement) => {
         go();
       }
     });
-    const marker = new gl.Marker({ element: el, anchor: 'center' })
+    const on = () => {
+      highlight(item.key, true);
+      revealCard(item.key);
+    };
+    const off = () => highlight(item.key, false);
+    el.addEventListener('mouseenter', () => {
+      if (heldKey && heldKey !== item.key) highlight(heldKey, false);
+      heldKey = null;
+      on();
+    });
+    el.addEventListener('mouseleave', () => {
+      if (scrolling) heldKey = item.key;
+      else off();
+    });
+    el.addEventListener('focus', on);
+    el.addEventListener('blur', off);
+    const marker = new gl.Marker({ element: box, anchor: 'center' })
       .setLngLat([item.lng, item.lat])
       .addTo(map);
-    pins.set(item.key, { marker, el });
+    pins.set(item.key, { marker, box, el });
   };
+
+  // Card → pin, delegated so cards that a filter re-renders keep working.
+  const cardKey = (target: EventTarget | null) => {
+    if (!(target instanceof Element)) return null;
+    const card = spaces
+      ? target.closest<HTMLElement>('[data-ca-comm-space]')
+      : target.closest<HTMLElement>('[data-ca-map-item]');
+    if (!card) return null;
+    return { card, key: (spaces ? card.dataset.caCommSpace : card.dataset.caMapItem) ?? '' };
+  };
+  document.addEventListener('mouseover', (e) => {
+    const hit = cardKey(e.target);
+    if (!hit || hit.card.contains(e.relatedTarget as Node | null)) return;
+    highlight(hit.key, true);
+  });
+  document.addEventListener('mouseout', (e) => {
+    const hit = cardKey(e.target);
+    if (!hit || hit.card.contains(e.relatedTarget as Node | null)) return;
+    highlight(hit.key, false);
+  });
 
   let firstFit = true;
   const sync = () => {
@@ -238,9 +361,10 @@ export const initMap = async (container: HTMLElement) => {
     const shown = new Set(
       items.filter((i) => (spaces ? spaceShown(i.key) : isShown(i.el))).map((i) => i.key)
     );
-    pins.forEach(({ el }, key) => {
+    pins.forEach(({ el, box }, key) => {
       const off = !shown.has(key);
       el.classList.toggle('is-dim', off);
+      box.classList.toggle('is-dim', off);
       el.tabIndex = off ? -1 : 0;
       el.toggleAttribute('aria-hidden', off);
     });
@@ -270,6 +394,7 @@ export const initMap = async (container: HTMLElement) => {
   map.on('load', () => {
     loaded = true;
     window.clearTimeout(timeout);
+    addLegend(map, container, fr, spaces);
     sync();
     // Watch the lists that hold the items, wherever they are on the page.
     const watched = [
