@@ -456,8 +456,32 @@ export const initMap = async (container: HTMLElement) => {
   });
 };
 
+// Mapbox bills one map load per map started, so the map only starts when it is worth it:
+//   · not for crawlers and automated browsers, which would each count as a load;
+//   · not before it comes within START_MARGIN of the screen, so a visit that ends in the
+//     hero costs nothing. The map sits only 30–440 px below the fold (2026-10-06), so the
+//     margin stays small; on large screens the map is already in view and starts at once.
+const START_MARGIN = '0px 0px 100px 0px';
+const BOT =
+  /bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|headlesschrome|lighthouse|prerender|semrush|ahrefs|petalsearch|bytespider/i;
+
+const whenNear = (el: HTMLElement, start: () => void) => {
+  if (!('IntersectionObserver' in window)) return start();
+  const io = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      start();
+    },
+    { rootMargin: START_MARGIN }
+  );
+  io.observe(el);
+};
+
 export const startMaps = () => {
+  const bot = BOT.test(navigator.userAgent);
   document.querySelectorAll<HTMLElement>('[data-ca-map]').forEach((el) => {
-    void initMap(el);
+    if (bot) return fail(el);
+    whenNear(el, () => void initMap(el));
   });
 };
