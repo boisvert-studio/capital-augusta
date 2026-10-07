@@ -10,7 +10,7 @@ import { groceryMark, metroMark } from './layers';
 const GROCERY_MIN_ZOOM = 13.5;
 
 const CSS = `
-.ca-legend{position:absolute;top:16px;right:16px;z-index:2;max-width:200px;padding:12px;
+.ca-legend{position:absolute;top:calc(var(--ca-map-inset,0px) + 16px);right:16px;z-index:2;max-width:200px;padding:12px;
   border:1px solid rgba(209,170,65,.18);border-radius:8px;background:rgba(22,28,50,.72);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:12px;line-height:1.3}
 .ca-legend-row{display:flex;align-items:center;gap:8px;padding:4px 0;color:rgba(255,255,255,.82)}
