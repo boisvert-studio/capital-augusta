@@ -137,6 +137,12 @@ const buildBus = () => {
 
 // Up to three métro stations (`data-s1..3`, minutes `data-d1..3`, metres `data-m1..3`), each a
 // walking-directions link from the building's coordinates.
+// « 640 m », and from 1 km « 1,4 km » (EN « 1.4 km »), as the prototype's fmtDist.
+const metres = (m: number, fr: boolean) =>
+  m < 1000
+    ? `${m.toLocaleString(fr ? 'fr-CA' : 'en-CA')} m`
+    : `${(m / 1000).toLocaleString(fr ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+
 const buildMetro = (fr: boolean) => {
   const box = document.querySelector<HTMLElement>('[data-ca-metro]');
   if (!box) return false;
@@ -151,7 +157,7 @@ const buildMetro = (fr: boolean) => {
     const dist =
       (mn ? mn + (fr ? ' min à pied' : ' min walk') : '') +
       (mn && m ? ' · ' : '') +
-      (m ? `${Number(m).toLocaleString(fr ? 'fr-CA' : 'en-CA')} m` : '');
+      (m ? metres(Number(m), fr) : '');
     const url =
       'https://www.google.com/maps/dir/?api=1' +
       (lat && lng ? `&origin=${lat},${lng}` : '') +
@@ -197,6 +203,21 @@ const startBuilding = (fr: boolean) => {
     if (collect?.lastChild?.nodeType === Node.TEXT_NODE)
       collect.lastChild.textContent = fr ? ` pour le ${name}.` : ` for ${name}.`;
   }
+
+  // Size ranges in the types table: one value when min = max (« ~906 pi² », not « ~ 906 – 906 »),
+  // with the « ~ » set against the number, as the prototype. Runs after formatNumbers.
+  d.querySelectorAll('[data-bb="smin"]').forEach((min) => {
+    const max = min.parentElement?.querySelector('[data-bb="smax"]');
+    if (max && min.textContent?.trim() === max.textContent?.trim()) {
+      max.previousElementSibling?.remove();
+      max.remove();
+    }
+    const tilde = min.previousElementSibling;
+    if (tilde?.textContent?.trim() === '~') {
+      tilde.remove();
+      min.textContent = `~${min.textContent?.trim() ?? ''}`;
+    }
+  });
 
   // FAQ items whose CMS answer is empty.
   d.querySelectorAll('[data-ca-faq-a]').forEach((p) => {
@@ -434,6 +455,13 @@ const startUnit = (fr: boolean) => {
   if (!main) return;
   const code = attr(main, 'data-ca-code');
   const num = attr(main, 'data-ca-numero');
+
+  // The availability question names the unit, as the prototype (« Quand l’unité 115 est-elle disponible ? »).
+  const when = d.querySelector('[data-ca-faq="quand"] summary > span');
+  if (when && num)
+    when.textContent = fr
+      ? `Quand l’unité ${num} est-elle disponible ?`
+      : `When is unit ${num} available?`;
 
   if (code)
     d.querySelectorAll<HTMLAnchorElement>('a[data-ca-contact="unit"]').forEach((a) => {

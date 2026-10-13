@@ -7,6 +7,7 @@ import { startHeroRotators } from './hero-rotator';
 import { moveCurrency, startI18n } from './i18n';
 import { startKeys } from './keys';
 import { startMaps } from './map';
+import { startPriceGuard } from './price-guard';
 
 // English pages: swap interface text now, before Webflow's ready hook, so French doesn't flash.
 startI18n();
@@ -14,6 +15,7 @@ startI18n();
 window.Webflow ||= [];
 window.Webflow.push(() => {
   // Modules start here, each keyed on a data attribute and a no-op when it is absent.
+  startPriceGuard(); // raw CMS numbers, so before formatNumbers
   formatNumbers();
   moveCurrency(); // after formatNumbers, so the $ lands in front of the grouped number
   formatDates();
