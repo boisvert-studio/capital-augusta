@@ -63,6 +63,8 @@ export const EN: Record<string, string> = {
   Loyer: 'Rent',
   '/ mois': '/ mo',
   '$ / mois': '$ / month',
+  // Unit with no rent (Designer #24, 2026-10-13)
+  'Sur demande': 'On request',
   Détails: 'Details',
   'Type de logement': 'Unit type',
   Conciergerie: 'Building care',
