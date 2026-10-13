@@ -20,12 +20,6 @@ const BY_VALUE = {
       Piscine: 'Pool', Buanderie: 'Laundry',
     },
   },
-  equipe: {
-    role: {
-      'Responsable — locaux commerciaux': 'Commercial leasing', 'Responsable — Côte-Vertu': 'Manager — Côte-Vertu',
-      Coordonnatrice: 'Coordinator', "Gestionnaire d'immeuble": 'Building manager',
-    },
-  },
   promotions: {
     name: {
       '1 mois offert': '1 month free', 'Bail de 2 ans disponible': '2-year lease available',
