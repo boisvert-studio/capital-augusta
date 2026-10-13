@@ -87,6 +87,7 @@ export const EN: Record<string, string> = {
   // Building fiche, types row: the Plan cell reads « disponible » when the type has a plan.
   disponible: 'available',
   'Plan type': 'Typical floor plan',
+  Plan: 'Floor plan', // unit plan caption (« Plan », Danny 2026-10-13) and the building type table's Plan cell
   'Plan d’étage à venir': 'Floor plan coming soon',
   'Plan d’étage du logement': 'Unit floor plan',
   'Ce logement m’intéresse': 'I’m interested',

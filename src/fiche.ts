@@ -137,11 +137,12 @@ const buildBus = () => {
 
 // Up to three métro stations (`data-s1..3`, minutes `data-d1..3`, metres `data-m1..3`), each a
 // walking-directions link from the building's coordinates.
-// « 640 m », and from 1 km « 1,4 km » (EN « 1.4 km »), as the prototype's fmtDist.
+// « 640 m », and from 1 km « 1,4 km » (EN « 1.4 km »), as the prototype's fmtDist. Non-breaking
+// spaces keep the number with its unit (« 1,9 » / « km » wrapped on tablets, 2026-10-13).
 const metres = (m: number, fr: boolean) =>
   m < 1000
-    ? `${m.toLocaleString(fr ? 'fr-CA' : 'en-CA')} m`
-    : `${(m / 1000).toLocaleString(fr ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+    ? `${m.toLocaleString(fr ? 'fr-CA' : 'en-CA')}\u00a0m`
+    : `${(m / 1000).toLocaleString(fr ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}\u00a0km`;
 
 const buildMetro = (fr: boolean) => {
   const box = document.querySelector<HTMLElement>('[data-ca-metro]');
@@ -155,7 +156,7 @@ const buildMetro = (fr: boolean) => {
     const mn = attr(box, `data-d${k}`);
     const m = attr(box, `data-m${k}`);
     const dist =
-      (mn ? mn + (fr ? ' min à pied' : ' min walk') : '') +
+      (mn ? mn + (fr ? '\u00a0min à pied' : '\u00a0min walk') : '') +
       (mn && m ? ' · ' : '') +
       (m ? metres(Number(m), fr) : '');
     const url =
