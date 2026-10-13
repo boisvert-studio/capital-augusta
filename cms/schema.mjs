@@ -1,9 +1,11 @@
-// The CMS schema as code: the 9 collections decided in Q04 (2026-09-23), corrected by Q12
+// The CMS schema as code: the collections decided in Q04 (2026-09-23), corrected by Q12
 // (available count is computed on the page, so no field for it). Métro slots carry minutes +
 // metres, as the approved design shows them; Q04's « line » field is not displayed, so dropped.
 // Order matters: a collection can only reference collections created before it. A field marked
-// `deferred: true` points forward (Immeubles → Types de logement); create-schema adds it in a
-// second pass once every collection exists.
+// `deferred: true` would point forward; create-schema adds such fields in a second pass (none
+// since Types offerts was removed, 2026-10-13).
+// Removed 2026-10-13 (unused; snapshots kept with the project notes): Équipe collection,
+// Immeubles Gestionnaire + Types offerts, Appartements Description + Photos.
 // `ref` names the target collection's slug. Collection slugs = URL paths: /immeuble/<item>,
 // /local-commercial/<item> (singular, so the static /immeubles and /commercial pages can exist). Field slugs are the ones Webflow derived from the
 // display names at creation (verified 2026-10-02): the API ignores a `slug` sent on create and
@@ -33,13 +35,6 @@ export const COLLECTIONS = [
     fields: [{ type: 'Phone', displayName: 'Téléphone', slug: 'telephone' }],
   },
   {
-    displayName: 'Équipe', singularName: 'Membre', slug: 'equipe',
-    fields: [
-      { type: 'PlainText', displayName: 'Rôle', slug: 'role' },
-      { type: 'Email', displayName: 'Courriel', slug: 'courriel' },
-    ],
-  },
-  {
     displayName: 'Promotions', singularName: 'Promotion', slug: 'promotions',
     fields: [
       { type: 'PlainText', displayName: 'Texte', slug: 'texte' },
@@ -59,15 +54,9 @@ export const COLLECTIONS = [
       { type: 'Number', displayName: 'Loyer à partir de', slug: 'loyer-a-partir-de', helpText: 'Votre prix d’appel affiché sur la fiche.' },
       { type: 'MultiReference', displayName: 'Inclus', slug: 'inclus', ref: 'commodites' },
       { type: 'MultiReference', displayName: 'En option (payant)', slug: 'en-option-payant', ref: 'commodites' },
-      { type: 'Reference', displayName: 'Gestionnaire', slug: 'gestionnaire', ref: 'equipe' },
       { type: 'Reference', displayName: 'Concierge', slug: 'concierge', ref: 'conciergerie' },
       { type: 'Switch', displayName: 'Concierge à venir', slug: 'concierge-a-venir' },
       { type: 'Reference', displayName: 'Promotion', slug: 'promotion', ref: 'promotions' },
-      // Plan §2 (2026-10-02): a forward multi-ref so the Home « Type » filter and the card's
-      // « N types » can read the building's types (Webflow nests only forward references).
-      // Written by the seed, derived from Types de logement.
-      { type: 'MultiReference', displayName: 'Types offerts', slug: 'types-offerts', ref: 'types-de-logement', deferred: true,
-        helpText: 'Types de logement de cet immeuble (alimente le filtre « Type »).' },
       { type: 'MultiImage', displayName: 'Galerie', slug: 'galerie' },
       { type: 'Image', displayName: 'Photo principale', slug: 'photo-principale', helpText: 'Photo de la carte et de l’aperçu de partage. Par défaut, la 1re photo de la galerie.' },
       ...metro(1), ...metro(2), ...metro(3),
@@ -104,8 +93,6 @@ export const COLLECTIONS = [
       { type: 'Number', displayName: 'Loyer', slug: 'loyer' },
       { type: 'DateTime', displayName: 'Disponible le', slug: 'disponible-le' },
       { type: 'Number', displayName: 'Superficie (pi²)', slug: 'superficie-pi2' },
-      { type: 'RichText', displayName: 'Description', slug: 'description' },
-      { type: 'MultiImage', displayName: 'Photos', slug: 'photos' },
     ],
   },
   {

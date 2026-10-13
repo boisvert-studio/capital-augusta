@@ -65,7 +65,6 @@ const imgs = (list) => (list ?? []).map(img).filter(Boolean);
 
 await upsert('commodites', seed.commodites, (r) => r.key, (r) => ({
   icone: r.icone, categorie: opt('commodites', 'categorie', r.categorie) }));
-await upsert('equipe', seed.equipe, (r) => r.key, (r) => ({ role: r.role, courriel: r.courriel }));
 await upsert('conciergerie', seed.conciergerie, (r) => r.key, (r) => ({ telephone: r.telephone }));
 await upsert('promotions', seed.promotions, (r) => r.key, (r) => ({
   texte: r.texte, lien: r.lien || undefined, active: r.active, portee: opt('promotions', 'portee', r.portee) }));
@@ -74,7 +73,7 @@ await upsert('immeuble', seed.immeubles, (r) => r.code, (r) => {
     code: r.code, secteur: opt('immeuble', 'secteur', r.secteur), latitude: r.latitude, longitude: r.longitude,
     'nombre-de-logements': r['nombre-de-logements'], 'loyer-a-partir-de': r['loyer-a-partir-de'],
     inclus: ids('commodites', r.inclus), 'en-option-payant': ids('commodites', r['en-option']),
-    gestionnaire: ref.equipe[r.gestionnaire], concierge: ref.conciergerie[r.concierge],
+    concierge: ref.conciergerie[r.concierge],
     'concierge-a-venir': r['concierge-a-venir'], promotion: ref.promotions[r.promotion],
     galerie: imgs(r.galerie), 'lignes-d-autobus': r['lignes-autobus'],
     'titre-seo': r['titre-seo'], 'description-seo': r['description-seo'],
@@ -88,18 +87,6 @@ await upsert('types-de-logement', seed.types, (r) => r.key, (r) => ({
   'superficie-min-pi2': r['superficie-min'], 'superficie-max-pi2': r['superficie-max'],
   'loyer-a-partir-de': r['loyer-a-partir-de'], plan: img(typeof r.plan === 'string' ? { url: r.plan, alt: r.name } : r.plan),
   photos: imgs(r.photos) }));
-
-// Immeubles → Types offerts (plan §2): a forward reference, so it can only be written once the
-// types exist. A second, fields-only pass over the buildings.
-tally['immeuble · types-offerts'] = { new: 0, update: 0 };
-for (const r of seed.immeubles ?? []) {
-  const types = ids('types-de-logement', r['types-offerts']);
-  if (!types.length) continue;
-  tally['immeuble · types-offerts'].update++;
-  if (DRY) { console.log('~', 'immeuble', r.code, `types-offerts (${types.length})`); continue; }
-  await api('PATCH', `/collections/${cols.immeuble.id}/items/${ref.immeuble[r.code]}`, { fieldData: { 'types-offerts': types } });
-  console.log('~', 'immeuble', r.code, `types-offerts (${types.length})`);
-}
 
 await upsert('logement', seed.logements, (r) => r.code, (r) => ({
   code: r.code, immeuble: ref.immeuble[r.immeuble], 'type-de-logement': ref['types-de-logement'][r.type],
