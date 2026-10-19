@@ -234,12 +234,17 @@ export const startCounts = () => {
   refresh();
   watchResultWords();
 
-  // Lists can be re-rendered after load (Finsweet pagination, load more): recount when the
-  // lists that hold counted items gain or lose children.
+  // Lists can be re-rendered after load (Finsweet load-all, pagination): recount when the
+  // lists that hold counted items gain or lose items. Watch the list itself, not the counted
+  // element's parent: on /immeubles the attribute sits on a span inside the item, so its
+  // parent is the item and appended items went unseen.
   const parents = new Set<Element>();
   document
     .querySelectorAll('[data-ca-unit], [data-ca-comm-space], [data-ca-comm-building]')
-    .forEach((el) => el.parentElement && parents.add(el.parentElement));
+    .forEach((el) => {
+      const list = el.closest('.w-dyn-items') ?? el.parentElement;
+      if (list) parents.add(list);
+    });
   if (!parents.size) return;
   let queued = false;
   const observer = new MutationObserver(() => {
