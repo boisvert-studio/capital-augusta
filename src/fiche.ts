@@ -383,11 +383,22 @@ const addBuildingFaq = (fr: boolean) => {
 
 // -- Unit fiche ---------------------------------------------------------------------------
 
-// Two photos of the building, each opening a one-image lightbox.
-const unitPhotos = (box: Element, building: Element, fr: boolean) => {
+// The plan frame when the type has no floor plan: the building's first photo takes the
+// placeholder's place (Danny 2026-10-19). Same 320 / 220 px height as the placeholder, so nothing
+// moves; the rule is injected with the photo, which is itself built after first paint.
+const PLAN_PHOTO_CSS =
+  '.unit_plan-frame:has(>.unit_plan-photo){padding:0}' +
+  '.unit_plan-frame .unit_plan-photo{height:320px;border-radius:0}' +
+  '@media (max-width:767px){.unit_plan-frame .unit_plan-photo{height:220px}}';
+
+// Two photos of the building, each opening a one-image lightbox. With `ph` (the visible « Plan
+// d’étage à venir » placeholder), the first photo replaces it and the pair skips that photo.
+const unitPhotos = (box: Element, building: Element, fr: boolean, ph: Element | null) => {
   const d = document;
   const imgs = [...building.querySelectorAll<HTMLImageElement>('[data-ca-bdata-galerie] img')];
-  const pick = imgs.length > 3 ? imgs.slice(2, 4) : imgs.slice(0, 2);
+  const hero = ph && imgs.length ? imgs[0] : null;
+  const from = hero ? 1 : 0;
+  const pick = imgs.length > 3 ? imgs.slice(2, 4) : imgs.slice(from, from + 2);
   let lb: HTMLElement | null = null;
   let im: HTMLImageElement | null = null;
   let last: Element | null = null;
@@ -434,18 +445,34 @@ const unitPhotos = (box: Element, building: Element, fr: boolean) => {
     lb.querySelector('button')?.focus();
   };
 
-  pick.forEach((src, n) => {
+  const photo = (src: HTMLImageElement, label: string, lazy: boolean) => {
     const b = d.createElement('button');
     b.type = 'button';
     b.className = 'unit_photo';
     const alt = src.alt || building.getAttribute('data-name') || '';
-    b.setAttribute('aria-label', `${fr ? 'Agrandir la photo ' : 'Enlarge photo '}${n + 1}`);
+    b.setAttribute('aria-label', label);
     const i = d.createElement('img');
     i.src = src.currentSrc || src.src;
     i.alt = alt;
-    i.loading = 'lazy';
+    if (lazy) i.loading = 'lazy';
     b.appendChild(i);
     b.addEventListener('click', () => open(i.src, alt));
+    return b;
+  };
+
+  if (hero && ph) {
+    d.head.append(Object.assign(d.createElement('style'), { textContent: PLAN_PHOTO_CSS }));
+    const b = photo(hero, fr ? 'Agrandir la photo de l’immeuble' : 'Enlarge building photo', false);
+    b.classList.add('unit_plan-photo');
+    ph.replaceWith(b);
+    const note = d.querySelector('.unit_plan .unit_cap-note');
+    if (note) note.textContent = fr ? 'Photo de l’immeuble' : 'Building photo';
+  }
+
+  pick.forEach((src, n) => {
+    const b = photo(src, `${fr ? 'Agrandir la photo ' : 'Enlarge photo '}${n + 1}`, true);
+    // A lone photo spans the pair's two columns rather than leaving one empty.
+    if (pick.length === 1) b.style.gridColumn = '1 / -1';
     box.appendChild(b);
   });
 };
@@ -528,7 +555,10 @@ const startUnit = (fr: boolean) => {
   }
 
   const photos = d.querySelector('[data-ca-unit-photos]');
-  if (photos && building) unitPhotos(photos, building, fr);
+  // Webflow drops the placeholder from the page when the type has a plan; the class check covers
+  // a conditionally hidden copy all the same.
+  const ph = d.querySelector('.unit_plan-frame > .unit_plan-ph:not(.w-condition-invisible)');
+  if (photos && building) unitPhotos(photos, building, fr, ph);
 
   // « Quand est-il disponible ? » only while the badge says « libre maintenant ». The badge is
   // set by counts.ts, so this waits for the page to finish loading.
