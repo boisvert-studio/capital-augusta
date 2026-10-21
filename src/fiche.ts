@@ -391,14 +391,32 @@ const PLAN_PHOTO_CSS =
   '.unit_plan-frame .unit_plan-photo{height:320px;border-radius:0}' +
   '@media (max-width:767px){.unit_plan-frame .unit_plan-photo{height:220px}}';
 
-// Two photos of the building, each opening a one-image lightbox. With `ph` (the visible « Plan
-// d’étage à venir » placeholder), the first photo replaces it and the pair skips that photo.
-const unitPhotos = (box: Element, building: Element, fr: boolean, ph: Element | null) => {
+// Two photos, each opening a one-image lightbox: the unit type's own photos when it has some
+// (`own`, Danny 2026-10-21), else the building's. With `ph` (the visible « Plan d’étage à venir »
+// placeholder), the first photo replaces it and the pair skips that photo.
+const unitPhotos = (
+  box: Element,
+  building: Element,
+  fr: boolean,
+  ph: Element | null,
+  typeImgs: HTMLImageElement[]
+) => {
   const d = document;
-  const imgs = [...building.querySelectorAll<HTMLImageElement>('[data-ca-bdata-galerie] img')];
+  const own = typeImgs.length > 0;
+  const imgs = own
+    ? typeImgs
+    : [...building.querySelectorAll<HTMLImageElement>('[data-ca-bdata-galerie] img')];
   const hero = ph && imgs.length ? imgs[0] : null;
   const from = hero ? 1 : 0;
-  const pick = imgs.length > 3 ? imgs.slice(2, 4) : imgs.slice(from, from + 2);
+  // The building's first two photos already open its own page, so its pair starts at the third.
+  const pick = !own && imgs.length > 3 ? imgs.slice(2, 4) : imgs.slice(from, from + 2);
+  const what = own
+    ? fr
+      ? 'Logement type'
+      : 'Typical unit'
+    : fr
+      ? 'Photo de l’immeuble'
+      : 'Building photo';
   let lb: HTMLElement | null = null;
   let im: HTMLImageElement | null = null;
   let last: Element | null = null;
@@ -416,7 +434,7 @@ const unitPhotos = (box: Element, building: Element, fr: boolean, ph: Element | 
       lb.hidden = true;
       lb.setAttribute('role', 'dialog');
       lb.setAttribute('aria-modal', 'true');
-      lb.setAttribute('aria-label', fr ? 'Photo de l’immeuble' : 'Building photo');
+      lb.setAttribute('aria-label', what);
       lb.innerHTML = `<img alt=""><button type="button" aria-label="${fr ? 'Fermer' : 'Close'}">×</button>`;
       d.body.appendChild(lb);
       im = lb.querySelector('img');
@@ -462,11 +480,21 @@ const unitPhotos = (box: Element, building: Element, fr: boolean, ph: Element | 
 
   if (hero && ph) {
     d.head.append(Object.assign(d.createElement('style'), { textContent: PLAN_PHOTO_CSS }));
-    const b = photo(hero, fr ? 'Agrandir la photo de l’immeuble' : 'Enlarge building photo', false);
+    const b = photo(
+      hero,
+      own
+        ? fr
+          ? 'Agrandir la photo du logement type'
+          : 'Enlarge typical unit photo'
+        : fr
+          ? 'Agrandir la photo de l’immeuble'
+          : 'Enlarge building photo',
+      false
+    );
     b.classList.add('unit_plan-photo');
     ph.replaceWith(b);
     const note = d.querySelector('.unit_plan .unit_cap-note');
-    if (note) note.textContent = fr ? 'Photo de l’immeuble' : 'Building photo';
+    if (note) note.textContent = what;
   }
 
   pick.forEach((src, n) => {
@@ -558,7 +586,17 @@ const startUnit = (fr: boolean) => {
   // Webflow drops the placeholder from the page when the type has a plan; the class check covers
   // a conditionally hidden copy all the same.
   const ph = d.querySelector('.unit_plan-frame > .unit_plan-ph:not(.w-condition-invisible)');
-  if (photos && building) unitPhotos(photos, building, fr, ph);
+  // The unit type's photos, from the hidden type-data list, matched on the type's slug.
+  const typeKey = attr(main, 'data-ca-type');
+  const typeEl = typeKey
+    ? [...d.querySelectorAll('[data-ca-tdata]')].find((el) => attr(el, 'data-ca-tdata') === typeKey)
+    : undefined;
+  const typeImgs = typeEl
+    ? [...typeEl.querySelectorAll<HTMLImageElement>('[data-ca-tdata-photos] img')].filter(
+        (i) => i.getAttribute('src') && !i.classList.contains('w-dyn-bind-empty')
+      )
+    : [];
+  if (photos && building) unitPhotos(photos, building, fr, ph, typeImgs);
 
   // « Quand est-il disponible ? » only while the badge says « libre maintenant ». The badge is
   // set by counts.ts, so this waits for the page to finish loading.
