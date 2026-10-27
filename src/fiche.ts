@@ -599,11 +599,12 @@ const startUnit = (fr: boolean) => {
   if (photos && building) unitPhotos(photos, building, fr, ph, typeImgs);
 
   // « Quand est-il disponible ? » only while the badge says « libre maintenant ». The badge is
-  // set by counts.ts, so this waits for the page to finish loading.
+  // set by counts.ts, so this waits for the page to finish loading. A unit switched off has no
+  // badge at all, and its page says « plus disponible »: the question goes too.
   const avail = () => {
     const badge = d.querySelector('.unit_badge[data-ca-avail]');
     const q = d.querySelector('[data-ca-faq="quand"]');
-    if (badge && q && !badge.classList.contains('is-now')) q.remove();
+    if (q && !badge?.classList.contains('is-now')) q.remove();
   };
   if (d.readyState === 'complete') setTimeout(avail, 0);
   else window.addEventListener('load', () => setTimeout(avail, 0));
