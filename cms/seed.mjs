@@ -90,8 +90,8 @@ await upsert('types-de-logement', seed.types, (r) => r.key, (r) => ({
 
 await upsert('logement', seed.logements, (r) => r.code, (r) => ({
   code: r.code, immeuble: ref.immeuble[r.immeuble], 'type-de-logement': ref['types-de-logement'][r.type],
-  numero: r.numero, etage: r.etage, 'etage-affiche': r['etage-affiche'], loyer: r.loyer,
-  'disponible-le': r['disponible-le'], 'superficie-pi2': r.superficie }));
+  numero: r.numero, etage: r.etage, 'etage-affiche': r['etage-affiche'], 'loyer-2': r.loyer,
+  'disponible-le-2': r['disponible-le'], 'superficie-pi2': r.superficie }));
 await upsert('local-commercial', seed['immeubles-commerciaux'], (r) => r.key, (r) => ({
   immeuble: ref.immeuble[r.immeuble], 'nombre-de-locaux': r['nombre-de-locaux'] }));
 await upsert('locaux-commerciaux', seed['locaux-commerciaux'], (r) => r.key, (r) => ({
