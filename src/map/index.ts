@@ -5,6 +5,7 @@ import { PHONE_QUERY, SHEET_PEEK_PX } from '../mobile-map';
 import { setupArea } from './area';
 import { ICONS } from './layers';
 import { addLegend } from './legend';
+import { createPinCard } from './pin-card';
 import { MAP_STYLE } from './style';
 
 // Map island. Self-starts when the page holds a `[data-ca-map]` container.
@@ -26,6 +27,10 @@ import { MAP_STYLE } from './style';
 // Hovering never scrolls the page: the list is not a scroller of its own, so bringing a card into
 // view moved the whole page and slid the map out from under the cursor (client report, 2026-11-05).
 //
+// A mouse click on a pin opens the building. A touch opens a small card first (pin-card.ts), and
+// the card opens the building. Input is judged per tap rather than per device, because a touch
+// laptop has both and some phones report that they can hover.
+//
 // The Mapbox token is read from site settings (`window.CA_CONFIG.mapboxToken`), so rotating
 // it never needs a rebuild.
 
@@ -39,6 +44,10 @@ declare global {
 const GL_VERSION = '3.9.0';
 const GL_BASE = `https://api.mapbox.com/mapbox-gl-js/v${GL_VERSION}/mapbox-gl`;
 const BOOT_TIMEOUT_MS = 8000;
+// A touch picks the nearest pin within this distance: pins are 22 px and overlap in the Plateau.
+const TAP_RADIUS_PX = 22;
+// Browsers send mouse events right after a touch, so they're ignored for this long.
+const TOUCH_ECHO_MS = 700;
 
 type Item = {
   key: string;
@@ -146,6 +155,13 @@ const loadGl = async () => {
 const fail = (container: HTMLElement) => {
   container.classList.add('is-map-fallback');
   container.setAttribute('hidden', '');
+};
+
+const cardLinkLabel = (fr: boolean, spaces: boolean, count: number | null) => {
+  if (!spaces) return fr ? 'Voir l’immeuble' : 'View building';
+  const many = (count ?? 0) > 1;
+  if (fr) return many ? 'Voir les locaux' : 'Voir le local';
+  return many ? 'View spaces' : 'View space';
 };
 
 const spacesLine = (n: number) =>
@@ -324,10 +340,17 @@ export const initMap = async (container: HTMLElement) => {
           (el) => el.dataset.caMapItem === key && isShown(el)
         );
 
-  const highlight = (key: string, on: boolean) => {
+  // The pin whose card is open. It stays white whatever hover or focus do around it.
+  let selectedKey: string | null = null;
+
+  const markPin = (key: string, on: boolean) => {
     const pin = pins.get(key);
     pin?.el.classList.toggle('is-active', on);
     pin?.box.classList.toggle('is-active', on);
+  };
+
+  const highlight = (key: string, on: boolean) => {
+    markPin(key, on || key === selectedKey);
     cardsFor(key).forEach((card) => card.classList.toggle('is-hot', on));
   };
 
@@ -354,8 +377,63 @@ export const initMap = async (container: HTMLElement) => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideTip();
   });
-  // A tap is not a hover: on a touch screen it goes straight to the building page.
   const canHover = window.matchMedia('(hover: hover)');
+  const touchFirst = window.matchMedia('(hover: none)');
+
+  // Which input the current gesture came from.
+  let lastPointer: string | null = null;
+  let lastTouchAt = -Infinity;
+  const notePointer = (e: PointerEvent) => {
+    lastPointer = e.pointerType;
+    if (e.pointerType !== 'mouse') lastTouchAt = performance.now();
+  };
+  document.addEventListener('pointerdown', notePointer, { capture: true, passive: true });
+  document.addEventListener('pointerup', notePointer, { capture: true, passive: true });
+  const justTouched = () => performance.now() - lastTouchAt < TOUCH_ECHO_MS;
+  const hovering = () => canHover.matches && !justTouched();
+  const viaMouse = () => (lastPointer ? lastPointer === 'mouse' : !touchFirst.matches);
+
+  // Selecting a pin only touches the pin. Marking the list's cards would wake the list observer
+  // below, whose fit would pull a map the visitor had panned back to the whole list.
+  const pinCard = createPinCard({
+    map,
+    container,
+    fr,
+    linkLabel: (item) => cardLinkLabel(fr, spaces, pins.get(item.key)?.item.count ?? null),
+    facts: (item) => tipContent(pins.get(item.key)?.item ?? (item as Item), spaces),
+    pinOf: (key) => pins.get(key)?.el,
+    onSelect: (key) => {
+      if (selectedKey) markPin(selectedKey, false);
+      selectedKey = key;
+      if (key) {
+        hideTip();
+        markPin(key, true);
+      }
+    },
+  });
+
+  const tapAt = (x: number, y: number) => {
+    let nearest: Item | null = null;
+    let best = TAP_RADIUS_PX;
+    pins.forEach(({ el, item }) => {
+      if (el.classList.contains('is-dim')) return;
+      const at = map.project([item.lng, item.lat]);
+      const distance = Math.hypot(at.x - x, at.y - y);
+      if (distance <= best) {
+        best = distance;
+        nearest = item;
+      }
+    });
+    if (nearest) pinCard.open(nearest);
+    else pinCard.close();
+  };
+
+  // Mapbox reports a tap beside a pin and, on most browsers, a tap on one. The pin's own click
+  // below covers the rest, and opening the same card twice does nothing.
+  map.on('click', (e: { point: { x: number; y: number } }) => {
+    if (viaMouse()) pinCard.close();
+    else tapAt(e.point.x, e.point.y);
+  });
 
   const addPin = (item: Item) => {
     const box = document.createElement('div');
@@ -363,16 +441,24 @@ export const initMap = async (container: HTMLElement) => {
     const el = document.createElement('div');
     el.className = 'ca-pin';
     el.tabIndex = 0;
-    el.setAttribute('role', 'link');
+    el.setAttribute('role', touchFirst.matches ? 'button' : 'link');
     el.dataset.key = item.key;
     box.append(el);
     paintPin(el, item, spaces);
+    const current = () => pins.get(item.key)?.item ?? item;
     const go = () => item.href && window.location.assign(item.href);
-    el.addEventListener('click', go);
+    const activate = () => (touchFirst.matches ? pinCard.open(current()) : go());
+    el.addEventListener('click', (e) => {
+      // No position to go by: a screen reader or a keyboard activated this very pin.
+      if (e.detail === 0) return activate();
+      if (viaMouse()) return go();
+      const box = map.getCanvasContainer().getBoundingClientRect();
+      tapAt(e.clientX - box.left, e.clientY - box.top);
+    });
     el.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || (e.key === ' ' && touchFirst.matches)) {
         e.preventDefault();
-        go();
+        activate();
       }
     });
     const on = () => {
@@ -384,10 +470,12 @@ export const initMap = async (container: HTMLElement) => {
       hideTip(item.key);
     };
     el.addEventListener('mouseenter', () => {
-      if (canHover.matches) on();
+      if (hovering()) on();
     });
     el.addEventListener('mouseleave', off);
-    el.addEventListener('focus', on);
+    el.addEventListener('focus', () => {
+      if (!justTouched()) on();
+    });
     el.addEventListener('blur', off);
     const marker = new gl.Marker({ element: box, anchor: 'center' })
       .setLngLat([item.lng, item.lat])
@@ -406,7 +494,7 @@ export const initMap = async (container: HTMLElement) => {
   };
   document.addEventListener('mouseover', (e) => {
     // A tap also fires mouseover, and the card would stay gold after coming back to the page.
-    if (!canHover.matches) return;
+    if (!hovering()) return;
     const hit = cardKey(e.target);
     if (!hit || hit.card.contains(e.relatedTarget as Node | null)) return;
     highlight(hit.key, true);
@@ -428,6 +516,7 @@ export const initMap = async (container: HTMLElement) => {
       if (pin) {
         pin.item = item;
         paintPin(pin.el, item, spaces);
+        pinCard.refresh(item);
       } else addPin(item);
     });
     const shown = new Set(
@@ -440,8 +529,10 @@ export const initMap = async (container: HTMLElement) => {
       el.tabIndex = off ? -1 : 0;
       el.toggleAttribute('aria-hidden', off);
       if (off) hideTip(key);
+      if (off && key === selectedKey) pinCard.close();
     });
-    if (area.active()) return;
+    // A fit would move the map out from under the open card.
+    if (area.active() || selectedKey) return;
     const pts = items.filter((i) => shown.has(i.key));
     const fit = pts.length ? pts : items;
     if (!fit.length) return;

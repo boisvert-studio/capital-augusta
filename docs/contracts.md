@@ -26,6 +26,8 @@ Config: `window.CA_CONFIG.mapboxToken` in site head code. The map dims a pin whe
 
 **Space mode** (`data-ca-map-counts="space"`, the commercial page): the building items can sit in a hidden list. A pin is shown while at least one shown `[data-ca-comm-space]` carries its item key, so it follows the filtered space cards. Labels count spaces (« 1 local disponible », « aucun local disponible »). Each pin carries `data-key` (the item key) and takes class `is-active` for card-hover highlighting.
 
+**Touch** (judged per tap, so a touch laptop's mouse still opens the building directly): a tap opens a small card instead of the building. The card reads from the item, so these must stay on it: its `img` (first one, no photo box if there is none), `.building-card_sector`, `.building-card_meta span`, `[data-ca-count-for]` and `.building-card_from`, plus the item's `href` or inner link.
+
 **Start (v0.4.13):** the map starts only when it comes within 100 px of the screen, and never for crawlers or headless browsers (user-agent check; the container is hidden for them). Mapbox bills one map load per map started. Automated tests must send a desktop user agent.
 
 **Pins and cards (v0.4.9):** each marker is a fixed `.ca-marker` box (Mapbox positions it) holding the `.ca-pin`, which carries every visual state; never scale or transform the marker box. Hovering or focusing a pin adds `is-active` to it and `is-hot` to its card(s) (on space mode: the shown `[data-ca-comm-space]` cards with its key), and scrolls the card to the centre when it is entirely out of view. Hovering a card (delegated, so re-rendered cards work) lights its pin.
