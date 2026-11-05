@@ -7,6 +7,7 @@ import { startHeroRotators } from './hero-rotator';
 import { moveCurrency, startI18n } from './i18n';
 import { startKeys } from './keys';
 import { startMaps } from './map';
+import { startMobileMap } from './mobile-map';
 import { startPriceGuard } from './price-guard';
 
 // English pages: swap interface text now, before Webflow's ready hook, so French doesn't flash.
@@ -25,6 +26,7 @@ window.Webflow.push(() => {
   moveCurrency('[data-cf="from-num"],[data-cf-rate],[data-cf-money]'); // the fiche's rates, now read
   startMaps();
   startFiltersBar();
+  startMobileMap();
   startChips(); // chip labels from the option text, after i18n has localized it
   startHeroRotators();
 });

@@ -1,0 +1,59 @@
+/* Phone layout of the discovery pages: CSS reference for src/mobile-map.ts
+ *
+ * Where it lives: site head code, minified, inside the existing <style> block. It has to apply
+ * at first paint, or the phone would show the long filter stack and then jump. Like the bar's
+ * EMBED rules in filters-bar.css, none of it can be built on the Designer's own breakpoints
+ * without changing the tablet layout (sticky map, svh, tray opened by a script class).
+ *
+ * To revert the phone layout: remove this block from the head, and drop startMobileMap from
+ * src/index.ts. Tablet and desktop never read these rules.
+ *
+ * Keep --ca-strip-h and --ca-sheet-peek in step with STRIP_PX and SHEET_PEEK_PX in the script.
+ */
+
+.ca-fbtn,.ca-scrim,.ca-traytop,.ca-trayfoot,.ca-shead,.ca-fab{display:none}
+
+@media (max-width:767px){
+:root{--ca-strip-h:54px;--ca-sheet-peek:86px}
+html.ca-tray-open{overflow:hidden}
+
+/* -- Bar: one button at rest. The strip holds « Filtres » and a row of count and chips. ---- */
+.bar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.bar_slot{height:62px!important;margin-top:20px!important}
+.bar.is-ready .bar_form-block{display:none!important}
+.bar:not(.is-docked) .bar_row{width:100%}
+.bar.is-docked .bar_row{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:10px;width:100%;height:var(--ca-strip-h);min-height:0;padding:7px 0;box-sizing:border-box}
+.bar.is-docked .ca-fbtn{display:inline-flex;flex:none;align-items:center;gap:8px;height:40px;padding:0 14px;border:1px solid #161C32;border-radius:20px;background:#fff;color:#161C32;font:700 14px Manrope,sans-serif;pointer-events:auto;cursor:pointer}
+.ca-fbtn b{min-width:18px;height:18px;border-radius:9px;background:#161C32;color:#fff;font-size:11px;line-height:18px;text-align:center}
+.bar.is-docked .bar_meta{flex:1 1 0!important;min-width:0;flex-wrap:nowrap!important;justify-content:flex-start!important;margin:0!important;padding:0!important;border:0!important;overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+.bar.is-docked .bar_meta::-webkit-scrollbar{display:none}
+.bar.is-docked .bar_meta>*{flex:none}
+
+/* -- Tray: the real form, in a panel from the bottom. -------------------------------------- */
+.bar.ca-open{z-index:2000!important}
+.bar.ca-open .bar_form-block{display:flex!important;flex-direction:column;position:fixed;left:0;right:0;bottom:0;z-index:2;width:auto;max-height:88svh;margin:0;padding:0;border-radius:18px 18px 0 0;background:#fff;pointer-events:auto;overscroll-behavior:contain;animation:ca-tray-in .26s cubic-bezier(.22,1,.36,1)}
+.bar.ca-open .bar_form{display:grid!important;grid-template-columns:1fr!important;flex:1 1 auto;gap:14px;width:100%;min-height:0;padding:18px;overflow:auto;box-sizing:border-box}
+.bar.ca-open .bar_field{border:0!important}
+.bar.ca-open .bar_select{width:100%;height:48px;padding:0 34px 0 12px!important;border:1px solid #c4c7d2;border-radius:8px;font-size:16px!important}
+.bar.ca-open .bar_field::after{top:auto!important;right:14px!important;bottom:31px!important;margin:0!important}
+.bar.ca-open .ca-scrim{display:block;position:fixed;inset:0;background:rgba(10,13,24,.5);pointer-events:auto;animation:ca-scrim-in .2s ease-out}
+.bar.ca-open .ca-traytop{display:flex;position:relative;flex:none;align-items:center;justify-content:center;height:52px;border-bottom:1px solid #e3e5ec;color:#161C32;font:700 16px Manrope,sans-serif}
+.ca-trayclose{position:absolute;top:5px;right:8px;width:42px;height:42px;border:0;background:none;color:#161C32;font-size:24px;cursor:pointer}
+.bar.ca-open .ca-trayfoot{display:flex;flex:none;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid #e3e5ec}
+.ca-clear{padding:12px 0;border:0;background:none;color:#161C32;font:600 14px Manrope,sans-serif;text-decoration:underline;cursor:pointer}
+.ca-go{min-height:48px;padding:0 22px;border:0;border-radius:8px;background:#161C32;color:#fff;font:700 15px Manrope,sans-serif;cursor:pointer}
+@keyframes ca-tray-in{from{transform:translateY(100%)}}
+@keyframes ca-scrim-in{from{opacity:0}}
+
+/* -- Map pinned under the strip, list as a sheet over it. ---------------------------------- */
+.discovery_head{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.discovery_grid{display:block!important}
+.discovery_map{position:sticky!important;top:calc(var(--ca-nav-h,62px) + var(--ca-strip-h) + 1px)!important;z-index:1;height:calc(100svh - var(--ca-nav-h,62px) - var(--ca-strip-h) - 1px)!important;min-height:0!important}
+.ca-area-btn{white-space:nowrap}
+.discovery_map .mapboxgl-ctrl-bottom-left,.discovery_map .mapboxgl-ctrl-bottom-right{bottom:var(--ca-sheet-peek)}
+.discovery_list{position:relative;z-index:5;margin-top:calc(-1*var(--ca-sheet-peek));padding-top:58px;border:0!important;border-radius:18px 18px 0 0;background:#FBFAF7;box-shadow:0 -6px 22px rgba(22,28,50,.28)}
+.ca-shead{display:block;position:absolute;top:0;left:0;width:100%;height:58px;padding:10px 16px 0;border:0;background:none;color:#161C32;font:700 16px Manrope,sans-serif;text-align:center;cursor:pointer}
+.ca-shead i{display:block;width:40px;height:4px;margin:0 auto 10px;border-radius:2px;background:#c4c7d2}
+.ca-fab.is-on{display:block;position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:50;height:44px;padding:0 20px;border:0;border-radius:22px;background:#161C32;color:#fff;font:700 14px Manrope,sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.35);transform:translateX(-50%);cursor:pointer}
+}
+@media (max-width:767px) and (prefers-reduced-motion:reduce){.bar.ca-open .bar_form-block,.bar.ca-open .ca-scrim{animation:none}}

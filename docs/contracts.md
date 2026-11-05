@@ -108,3 +108,7 @@ Filter keys that cannot come from a nested list (Webflow allows two nested lists
 | `data-ca-key-for` | one item per key in a flat hidden collection list, value `CODE` | Its text is copied into the matching card as `<span fs-list-field="FIELD">value</span>`. |
 | `data-ca-key-field` | the same item | The Finsweet field name, e.g. `type`. |
 | `data-ca-keys` | hidden container inside each card, value `CODE` | Receives one span per field with the values joined by spaces (`1½ 3½`): Finsweet reads only the first element of a field outside a nested list, so the matching select needs `fs-list-operator="contain"`. If Finsweet has already started, its list module is restarted. |
+
+## Phone layout (`src/mobile-map.ts`, `docs/mobile-map.css`)
+
+Below 768 px on the discovery pages, the map pins under the docked strip, the list is a sheet over it and the filters open in a tray. The script and CSS look up these Webflow classes, so renaming one in the Designer breaks the layout: `.discovery_grid`, `.discovery_map`, `.discovery_list`, `.discovery_head`, `.bar_row`, `.bar_form-block`, `.bar_form`, `.bar_field`, `.bar_select`, `.bar_meta`, `.bar_count`, `.bar_slot`. The CSS lives in site head code; see the header of `docs/mobile-map.css` for why and how to revert.

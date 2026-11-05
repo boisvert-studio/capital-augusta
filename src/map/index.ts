@@ -1,6 +1,7 @@
 import type { Marker } from 'mapbox-gl';
 import type mapboxgl from 'mapbox-gl';
 
+import { PHONE_QUERY, SHEET_PEEK_PX } from '../mobile-map';
 import { setupArea } from './area';
 import { ICONS } from './layers';
 import { addLegend } from './legend';
@@ -271,7 +272,9 @@ export const initMap = async (container: HTMLElement) => {
     style: MAP_STYLE,
     center: [-73.585, 45.53],
     zoom: 11.2,
-    cooperativeGestures: true,
+    // On a phone the map fills the screen, so one finger moves it; the strip and the list sheet
+    // still scroll the page. Elsewhere the map sits in the page, so it asks for two fingers.
+    cooperativeGestures: !window.matchMedia(PHONE_QUERY).matches,
     // Off by design: the privacy policy says the map sends no tracking data.
     performanceMetricsCollection: false,
     locale: fr
@@ -442,8 +445,12 @@ export const initMap = async (container: HTMLElement) => {
     if (!fit.length) return;
     const bounds = new gl.LngLatBounds();
     fit.forEach((i) => bounds.extend([i.lng, i.lat]));
+    // On a phone the list sheet covers the bottom of the map.
+    const phone = window.matchMedia(PHONE_QUERY).matches;
     map.fitBounds(bounds, {
-      padding: { top: 64, right: 56, bottom: 56, left: 56 },
+      padding: phone
+        ? { top: 64, right: 40, bottom: SHEET_PEEK_PX + 40, left: 40 }
+        : { top: 64, right: 56, bottom: 56, left: 56 },
       maxZoom: 14.5,
       duration: firstFit ? 0 : 650,
     });

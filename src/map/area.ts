@@ -1,5 +1,7 @@
 import type { LngLatBounds, Map as MapboxMap } from 'mapbox-gl';
 
+import { PHONE_QUERY, SHEET_PEEK_PX } from '../mobile-map';
+
 // « Rechercher dans cette zone ». After the visitor pans or zooms the map, a button offers to
 // limit the list to the buildings inside the current view. The limit runs as a filter step
 // inside Finsweet's own pipeline (a `filter` hook on each list instance), so it combines with
@@ -174,7 +176,9 @@ export const setupArea = ({ map, container, fr, spaces, coords }: Options) => {
   const visibleBounds = () => {
     const area = map.getBounds();
     const { clientWidth, clientHeight } = map.getContainer();
-    area?.setSouthWest(map.unproject([0, clientHeight]));
+    // On a phone the list sheet covers the bottom of the map, so what's under it isn't "visible".
+    const covered = window.matchMedia(PHONE_QUERY).matches ? SHEET_PEEK_PX : 0;
+    area?.setSouthWest(map.unproject([0, clientHeight - covered]));
     area?.setNorthEast(map.unproject([clientWidth, 0]));
     return area;
   };

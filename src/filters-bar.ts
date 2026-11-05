@@ -15,22 +15,15 @@
 // The nav height comes from the `--ca-nav-h` custom property on <html>, else from the height
 // of `[data-ca-nav]`, else 72px.
 
+import { scrollToPhoneMap } from './mobile-map';
+import { navHeight } from './nav-height';
+
 const DOCK_ZONE_PX = 110;
 const DOCKED_AT = 0.985;
-const FALLBACK_NAV_PX = 72;
 const SNAP_QUERY = '(max-width: 900px)';
 const REDUCED_QUERY = '(prefers-reduced-motion: reduce)';
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
-
-const navHeight = () => {
-  const fromCss = parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue('--ca-nav-h')
-  );
-  if (fromCss > 0) return fromCss;
-  const nav = document.querySelector<HTMLElement>('[data-ca-nav]');
-  return nav?.offsetHeight || FALLBACK_NAV_PX;
-};
 
 // Controls that are faded out must also leave the tab order.
 const setInert = (el: HTMLElement | null, inert: boolean) => {
@@ -88,6 +81,7 @@ const initBar = (
   cta?.addEventListener('click', (e) => {
     if (!target) return;
     e.preventDefault();
+    if (scrollToPhoneMap()) return;
     target.scrollIntoView({ behavior: reducedMq.matches ? 'auto' : 'smooth' });
   });
 
