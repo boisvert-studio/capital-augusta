@@ -20,8 +20,10 @@ import { MAP_STYLE } from './style';
 // hidden list and the visible list holds the spaces (`data-ca-comm-space="<item key>"`). A pin
 // is then shown while one of its spaces is shown, and its label counts spaces, not units.
 //
-// Hovering a pin highlights its card(s) and brings them into view; hovering a card highlights
-// its pin. On the commercial page the cards are the spaces of that building.
+// Hovering a pin highlights its card(s) and names the building in a label on the map; hovering a
+// card highlights its pin. On the commercial page the cards are the spaces of that building.
+// Hovering never scrolls the page: the list is not a scroller of its own, so bringing a card into
+// view moved the whole page and slid the map out from under the cursor (client report, 2026-11-05).
 //
 // The Mapbox token is read from site settings (`window.CA_CONFIG.mapboxToken`), so rotating
 // it never needs a rebuild.
@@ -46,7 +48,7 @@ type Item = {
   href: string;
   count: number | null;
 };
-type Pin = { marker: Marker; box: HTMLElement; el: HTMLElement };
+type Pin = { marker: Marker; box: HTMLElement; el: HTMLElement; item: Item };
 
 // Mapbox positions a marker with an inline transform on the element it is given. Anything
 // that scales that element (a hover `scale`, a `transform`) also scales its translation, so
@@ -68,6 +70,12 @@ const CSS = `
 [data-ca-map-item].is-hot,[data-ca-comm-space].is-hot{border-color:#D1AA41;
   box-shadow:0 0 0 2px #D1AA41,0 12px 28px rgba(22,28,50,.16);transform:translateY(-2px);position:relative;z-index:1}
 @media (prefers-reduced-motion:reduce){.ca-pin{transition:none}[data-ca-map-item].is-hot,[data-ca-comm-space].is-hot{transform:none}}
+.ca-tip{z-index:6;pointer-events:none}
+.ca-tip .mapboxgl-popup-content{pointer-events:none;padding:11px 13px;border-radius:8px;background:#fff;color:#161C32;
+  box-shadow:0 10px 28px rgba(0,0,0,.4);font:400 13px/1.35 Manrope,system-ui,sans-serif}
+.ca-tip_title{display:block;font:500 17px/1.2 Spectral,Georgia,serif;margin-bottom:2px}
+.ca-tip_line{display:block;color:#5A6074}
+.ca-tip_foot{display:flex;justify-content:space-between;gap:12px;margin-top:7px;padding-top:7px;border-top:1px solid #E3E5EC;font-weight:600}
 [data-ca-map] .mapboxgl-ctrl-group{background:rgba(22,28,50,.82);border:1px solid rgba(209,170,65,.28)}
 [data-ca-map] .mapboxgl-ctrl-group button span{filter:invert(1) brightness(1.6)}
 [data-ca-map] .mapboxgl-ctrl-attrib{background:rgba(22,28,50,.6)}
@@ -139,19 +147,18 @@ const fail = (container: HTMLElement) => {
   container.setAttribute('hidden', '');
 };
 
+const spacesLine = (n: number) =>
+  isFrench()
+    ? n === 0
+      ? 'aucun local disponible'
+      : `${n} ${n > 1 ? 'locaux disponibles' : 'local disponible'}`
+    : n === 0
+      ? 'no space available'
+      : `${n} available`;
+
 const pinLabel = (item: Item, spaces: boolean) => {
   if (item.count === null) return item.name;
-  if (spaces) {
-    const n = item.count;
-    const what = isFrench()
-      ? n === 0
-        ? 'aucun local disponible'
-        : `${n} ${n > 1 ? 'locaux disponibles' : 'local disponible'}`
-      : n === 0
-        ? 'no space available'
-        : `${n} available`;
-    return `${item.name} — ${what}`;
-  }
+  if (spaces) return `${item.name} — ${spacesLine(item.count)}`;
   if (isFrench()) {
     const what =
       item.count === 0
@@ -169,6 +176,49 @@ const paintPin = (el: HTMLElement, item: Item, spaces: boolean) => {
   if (el.textContent !== text) el.textContent = text;
   el.classList.toggle('is-empty', item.count === 0);
   el.setAttribute('aria-label', pinLabel(item, spaces));
+};
+
+const clean = (el: Element | null | undefined) =>
+  el?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+
+// The pin's label, read from its card so it shows what the card shows: the same translation,
+// the same live count and the same formatted price. A building with no card to read still gets
+// its name.
+const tipContent = (item: Item, spaces: boolean) => {
+  const root = document.createElement('div');
+  root.setAttribute('aria-hidden', 'true'); // the pin's own aria-label already says this
+  const add = (parent: HTMLElement, tag: string, className: string, text: string) => {
+    if (!text) return;
+    const el = document.createElement(tag);
+    el.className = className;
+    el.textContent = text;
+    parent.append(el);
+  };
+  add(root, 'span', 'ca-tip_title', item.name);
+  if (spaces) {
+    if (item.count !== null) add(root, 'span', 'ca-tip_line', spacesLine(item.count));
+    return root;
+  }
+  const card = item.el;
+  add(root, 'span', 'ca-tip_line', clean(card.querySelector('.building-card_sector')));
+  const words = [...card.querySelectorAll('.building-card_meta span')]
+    .filter((s) => !s.children.length && !s.closest('[aria-hidden]'))
+    .map(clean)
+    .filter(Boolean);
+  const facts: string[] = [];
+  for (let i = 0; i + 1 < words.length; i += 2) facts.push(`${words[i]} ${words[i + 1]}`);
+  add(root, 'span', 'ca-tip_line', facts.join(' · '));
+  const avail = clean(card.querySelector('[data-ca-count-for]'));
+  const from = card.querySelector('.building-card_from');
+  const price = from ? [...from.children].map(clean).filter(Boolean).join(' ') : '';
+  if (avail || price) {
+    const foot = document.createElement('span');
+    foot.className = 'ca-tip_foot';
+    add(foot, 'span', '', avail);
+    add(foot, 'span', '', price);
+    root.append(foot);
+  }
+  return root;
 };
 
 // The docked filter bar can cover the top of the map: on a short list (Commercial, one result)
@@ -275,50 +325,31 @@ export const initMap = async (container: HTMLElement) => {
     cardsFor(key).forEach((card) => card.classList.toggle('is-hot', on));
   };
 
-  // Brings the hovered pin's card into view. Debounced, so sweeping the cursor across a
-  // cluster scrolls once, for the pin it settles on. Only when the card is entirely out of
-  // view: a card half under the sticky header is already found, and scrolling for it would
-  // pull the map out from under the cursor.
-  let scrollTimer = 0;
-  // While the page scrolls for a pin, the map can slide under a still cursor (it is sticky
-  // only inside its section). That is not the visitor leaving the pin, so the highlight holds
-  // until the mouse actually moves.
-  let scrolling = false;
-  let heldKey: string | null = null;
-  let settle = 0;
-  const holdWhileScrolling = () => {
-    scrolling = true;
-    const done = () => {
-      scrolling = false;
-      window.removeEventListener('scroll', onScroll);
-    };
-    const onScroll = () => {
-      window.clearTimeout(settle);
-      settle = window.setTimeout(done, 200);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    settle = window.setTimeout(done, 400); // no scroll at all (already in place)
-  };
-  const revealCard = (key: string) => {
-    window.clearTimeout(scrollTimer);
-    scrollTimer = window.setTimeout(() => {
-      const card = cardsFor(key)[0];
-      if (!card || !pins.get(key)?.el.classList.contains('is-active')) return;
-      const r = card.getBoundingClientRect();
-      const { top } = container.getBoundingClientRect();
-      if (r.bottom > Math.max(top, 0) && r.top < window.innerHeight) return;
-      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      holdWhileScrolling();
-      card.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
-    }, 140);
-  };
-  document.addEventListener('mousemove', (e) => {
-    if (!heldKey || scrolling) return;
-    const pin = pins.get(heldKey)?.el;
-    if (pin && pin.contains(e.target as Node)) return;
-    highlight(heldKey, false);
-    heldKey = null;
+  // One label at a time, kept inside the map by the popup's automatic anchor. It lets the cursor
+  // through, so it never gets between the cursor and the next pin.
+  const tip = new gl.Popup({
+    closeButton: false,
+    closeOnClick: false,
+    focusAfterOpen: false,
+    offset: 18,
+    maxWidth: '290px',
+    className: 'ca-tip',
   });
+  let tipKey: string | null = null;
+  const showTip = (item: Item) => {
+    tipKey = item.key;
+    tip.setLngLat([item.lng, item.lat]).setDOMContent(tipContent(item, spaces)).addTo(map);
+  };
+  const hideTip = (key?: string) => {
+    if (key && key !== tipKey) return;
+    tipKey = null;
+    tip.remove();
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideTip();
+  });
+  // A tap is not a hover: on a touch screen it goes straight to the building page.
+  const canHover = window.matchMedia('(hover: hover)');
 
   const addPin = (item: Item) => {
     const box = document.createElement('div');
@@ -340,24 +371,22 @@ export const initMap = async (container: HTMLElement) => {
     });
     const on = () => {
       highlight(item.key, true);
-      revealCard(item.key);
+      showTip(pins.get(item.key)?.item ?? item);
     };
-    const off = () => highlight(item.key, false);
+    const off = () => {
+      highlight(item.key, false);
+      hideTip(item.key);
+    };
     el.addEventListener('mouseenter', () => {
-      if (heldKey && heldKey !== item.key) highlight(heldKey, false);
-      heldKey = null;
-      on();
+      if (canHover.matches) on();
     });
-    el.addEventListener('mouseleave', () => {
-      if (scrolling) heldKey = item.key;
-      else off();
-    });
+    el.addEventListener('mouseleave', off);
     el.addEventListener('focus', on);
     el.addEventListener('blur', off);
     const marker = new gl.Marker({ element: box, anchor: 'center' })
       .setLngLat([item.lng, item.lat])
       .addTo(map);
-    pins.set(item.key, { marker, box, el });
+    pins.set(item.key, { marker, box, el, item });
   };
 
   // Card → pin, delegated so cards that a filter re-renders keep working.
@@ -388,8 +417,10 @@ export const initMap = async (container: HTMLElement) => {
     const items = readItems();
     items.forEach((item) => {
       const pin = pins.get(item.key);
-      if (pin) paintPin(pin.el, item, spaces);
-      else addPin(item);
+      if (pin) {
+        pin.item = item;
+        paintPin(pin.el, item, spaces);
+      } else addPin(item);
     });
     const shown = new Set(
       items.filter((i) => (spaces ? spaceShown(i.key) : isShown(i.el))).map((i) => i.key)
@@ -400,6 +431,7 @@ export const initMap = async (container: HTMLElement) => {
       box.classList.toggle('is-dim', off);
       el.tabIndex = off ? -1 : 0;
       el.toggleAttribute('aria-hidden', off);
+      if (off) hideTip(key);
     });
     if (area.active()) return;
     const pts = items.filter((i) => shown.has(i.key));
