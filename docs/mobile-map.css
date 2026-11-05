@@ -18,19 +18,20 @@
 html.ca-tray-open{overflow:hidden}
 
 /* -- Scroll stops: the page rests on the map and the top of the list, so a flick from the hero
-      can't carry the list over the map. The hero's margins make it one tall area that stays
-      free to scroll, so short phones can reach the button and the map can't hold you. ---- */
+      can't carry the list over the map. The stops sit on thin elements: Chrome flies past a
+      stop on a tall area. The hero's margins make it one tall area that stays free to scroll,
+      so short phones can reach the button and the map can't hold you. ------------------- */
 html:has(.discovery_grid){scroll-snap-type:y proximity;scroll-padding-top:calc(var(--ca-nav-h,62px) + var(--ca-strip-h))}
 .home-hero_component{scroll-snap-align:start;scroll-margin:300px 0 100svh}
-.discovery_grid{scroll-snap-align:start;scroll-snap-stop:always}
-.discovery_list{scroll-snap-align:start;scroll-snap-stop:always;scroll-margin-top:12px}
+.discovery_head{scroll-snap-align:start;scroll-snap-stop:always}
+.ca-shead{scroll-snap-align:start;scroll-snap-stop:always;scroll-margin-top:12px}
 
 /* -- Bar: one button at rest. The strip holds « Filtres » and a row of count and chips. ---- */
 .bar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 .bar_slot{height:48px!important;margin-top:24px!important}
 .bar.is-ready .bar_form-block{display:none!important}
-.bar:not(.is-docked) .bar_row{width:100%;min-height:0!important;padding:0!important;border-radius:0;background:none!important;box-shadow:none!important}
-.bar:not(.is-docked) .bar_cta{width:100%;margin:0!important}
+.bar.is-ready:not(.is-docked) .bar_row{width:100%;min-height:0!important;padding:0!important;border-radius:0;background:none!important;box-shadow:none!important}
+.bar.is-ready:not(.is-docked) .bar_cta{width:100%;margin:0!important}
 .bar.is-docked .bar_row{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:10px;width:100%;height:var(--ca-strip-h);min-height:0;padding:7px 0;box-sizing:border-box}
 .bar.is-docked .ca-fbtn{display:inline-flex;flex:none;align-items:center;gap:8px;height:40px;padding:0 14px;border:1px solid #161C32;border-radius:20px;background:#fff;color:#161C32;font:700 14px Manrope,sans-serif;pointer-events:auto;cursor:pointer}
 .ca-fbtn b{min-width:18px;height:18px;border-radius:9px;background:#161C32;color:#fff;font-size:11px;line-height:18px;text-align:center}

@@ -405,6 +405,8 @@ export const initMap = async (container: HTMLElement) => {
     return { card, key: (spaces ? card.dataset.caCommSpace : card.dataset.caMapItem) ?? '' };
   };
   document.addEventListener('mouseover', (e) => {
+    // A tap also fires mouseover, and the card would stay gold after coming back to the page.
+    if (!canHover.matches) return;
     const hit = cardKey(e.target);
     if (!hit || hit.card.contains(e.relatedTarget as Node | null)) return;
     highlight(hit.key, true);
