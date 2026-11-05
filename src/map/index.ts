@@ -279,6 +279,9 @@ export const initMap = async (container: HTMLElement) => {
           'ScrollZoomBlocker.CtrlMessage': 'Utilisez Ctrl + défilement pour zoomer',
           'ScrollZoomBlocker.CmdMessage': 'Utilisez ⌘ + défilement pour zoomer',
           'TouchPanBlocker.Message': 'Déplacez la carte avec deux doigts',
+          'NavigationControl.ZoomIn': 'Zoom avant',
+          'NavigationControl.ZoomOut': 'Zoom arrière',
+          'AttributionControl.ToggleAttribution': 'Afficher ou masquer les crédits',
         }
       : undefined,
   });

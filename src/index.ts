@@ -22,6 +22,7 @@ window.Webflow.push(() => {
   startKeys(); // filter keys first, so Finsweet sees them
   startCounts(); // before the map, so pins find their data-count on first read
   startFiche(); // building, unit and commercial fiches; after counts, which sets the unit badge
+  moveCurrency('[data-cf="from-num"],[data-cf-rate],[data-cf-money]'); // the fiche's rates, now read
   startMaps();
   startFiltersBar();
   startChips(); // chip labels from the option text, after i18n has localized it

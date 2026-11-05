@@ -689,6 +689,10 @@ const startCommercial = (fr: boolean) => {
     it.appendChild(im);
     gallery.appendChild(it);
   });
+  // The site head reserves this space before the photos arrive; a building with none gives it back.
+  gallery
+    .closest('.fiche_gallery-wrap')
+    ?.classList.toggle('is-empty', !gallery.querySelector('img'));
   galleryLightbox(gallery, fr);
 };
 

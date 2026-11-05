@@ -53,6 +53,8 @@ export const EN: Record<string, string> = {
   logement: 'unit',
   'Aucun libre': 'None available',
   'À partir de': 'From',
+  // The direct-deposit form exists only in French, as the building regulations do.
+  'Direct deposit': 'Direct deposit (French)',
 
   // Building fiche
   unité: 'unit',

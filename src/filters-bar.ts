@@ -66,6 +66,9 @@ const initBar = (
     bar.classList.toggle('is-docked', m > DOCKED_AT);
     setInert(cta, ctaOpacity === 0);
     setInert(meta, metaOpacity === 0);
+    // The site head keeps the bar hidden until this first position is set, so it doesn't paint
+    // at the top of the page and jump into place.
+    bar.classList.add('is-ready');
   };
 
   let frame = 0;

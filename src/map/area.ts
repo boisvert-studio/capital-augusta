@@ -169,9 +169,19 @@ export const setupArea = ({ map, container, fr, spaces, coords }: Options) => {
     return refilter();
   };
 
+  // The whole visible map, corner to corner. map.getBounds() leaves out the padding of the last
+  // fit (up to 64 px per side), which dropped pins the visitor could still see near the edges.
+  const visibleBounds = () => {
+    const area = map.getBounds();
+    const { clientWidth, clientHeight } = map.getContainer();
+    area?.setSouthWest(map.unproject([0, clientHeight]));
+    area?.setNorthEast(map.unproject([clientWidth, 0]));
+    return area;
+  };
+
   button.addEventListener('click', () => {
     showButton(false);
-    void apply(map.getBounds());
+    void apply(visibleBounds());
   });
 
   const clear = () => {
