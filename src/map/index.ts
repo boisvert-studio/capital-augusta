@@ -428,9 +428,11 @@ export const initMap = async (container: HTMLElement) => {
     else pinCard.close();
   };
 
-  // Mapbox reports a tap beside a pin and, on most browsers, a tap on one. The pin's own click
-  // below covers the rest, and opening the same card twice does nothing.
-  map.on('click', (e: { point: { x: number; y: number } }) => {
+  // A tap beside a pin, or on empty map. A tap on a pin is the pin's own to handle below: Mapbox
+  // reports it here too, and without a position (a screen reader's activate) it read as empty map.
+  map.on('click', (e: { point: { x: number; y: number }; originalEvent: MouseEvent }) => {
+    const hit = e.originalEvent.target;
+    if (hit instanceof Element && hit.closest('.ca-pin')) return;
     if (viaMouse()) pinCard.close();
     else tapAt(e.point.x, e.point.y);
   });

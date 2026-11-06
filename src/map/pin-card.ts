@@ -1,5 +1,7 @@
 import type { Map as MapboxMap } from 'mapbox-gl';
 
+import { PHONE_QUERY } from '../mobile-map';
+
 // The card a tap on a pin opens on a touch screen, so a tap never leaves the map by surprise. It
 // docks at the bottom of the map's visible part and the whole card opens the building.
 //
@@ -40,7 +42,7 @@ const CSS = `
 .ca-pcard_close{position:absolute;top:0;right:0;width:44px;height:44px;padding:0;border:0;background:none;color:#5A6074;
   font:400 22px/1 Manrope,system-ui,sans-serif;cursor:pointer}
 .ca-pcard_close:focus-visible{outline:2px solid #D1AA41;outline-offset:-4px;border-radius:50%}
-[data-ca-map].ca-pcard-on .mapboxgl-ctrl-bottom-left,[data-ca-map].ca-pcard-on .mapboxgl-ctrl-bottom-right{bottom:var(--ca-pcard-lift)!important}
+[data-ca-map].ca-pcard-on .mapboxgl-ctrl-bottom-left,[data-ca-map].ca-pcard-on .mapboxgl-ctrl-bottom-right{bottom:max(var(--ca-sheet-peek,0px),var(--ca-pcard-lift))!important}
 @keyframes ca-pcard-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.ca-pcard{animation:none}}
 `;
@@ -102,12 +104,14 @@ export const createPinCard = ({
     if (returnFocus) pinOf(key)?.focus({ preventScroll: true });
   };
 
-  // Within the part of the map on screen, which on a tablet may be cut off by the page.
+  // On a phone, at the bottom of the screen: in landscape the map is a short strip above the list
+  // and a card on it would leave no map to see. Elsewhere, inside the part of the map on screen.
   const place = () => {
     const box = container.getBoundingClientRect();
     card.style.left = `${box.left + EDGE_PX}px`;
     card.style.width = `${Math.min(box.width - EDGE_PX * 2, MAX_WIDTH_PX)}px`;
-    const below = Math.max(0, window.innerHeight - box.bottom);
+    const phone = window.matchMedia(PHONE_QUERY).matches;
+    const below = phone ? 0 : Math.max(0, window.innerHeight - box.bottom);
     card.style.bottom = `calc(${below + EDGE_PX}px + env(safe-area-inset-bottom, 0px))`;
   };
 
@@ -140,12 +144,16 @@ export const createPinCard = ({
     container.classList.add('ca-pcard-on');
   };
 
-  // The tapped pin has to stay visible, so the map moves just enough if the card landed on it.
+  // The tapped pin has to stay visible, so the map moves just enough if the card landed on it,
+  // and never so far that the pin leaves the top of the map.
   const keepPinClear = (key: string) => {
     const pin = pinOf(key);
     if (!pin) return;
-    const overlap = pin.getBoundingClientRect().bottom + PIN_CLEARANCE_PX;
-    const push = overlap - card.getBoundingClientRect().top;
+    const at = pin.getBoundingClientRect();
+    const bar = document.querySelector('[data-ca-bar]')?.getBoundingClientRect().bottom ?? 0;
+    const top = Math.max(container.getBoundingClientRect().top, bar);
+    const wanted = at.bottom + PIN_CLEARANCE_PX - card.getBoundingClientRect().top;
+    const push = Math.min(wanted, at.top - top - PIN_CLEARANCE_PX);
     if (push <= 0) return;
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     map.panBy([0, push], { duration: still ? 0 : 260 });
