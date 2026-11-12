@@ -19,10 +19,11 @@ html.ca-tray-open{overflow:hidden}
 
 /* -- Scroll stops: the page rests on the map and the top of the list, so a flick from the hero
       can't carry the list over the map. The stops sit on thin elements: Chrome flies past a
-      stop on a tall area. The hero's margins make it one tall area that stays free to scroll,
-      so short phones can reach the button and the map can't hold you. ------------------- */
+      stop on a tall area. The hero has no stop (removed 2026-11-12): in Safari its stretched
+      snap area pulled slow drags back to the top and parked flicks halfway, and it didn't stop
+      the map from holding a short drag back up. Even at 320 x 460 the button stays reachable:
+      it is fully visible from 189 to 485 px of scroll, and the map stop pulls from ~110 px. */
 html:has(.discovery_grid){scroll-snap-type:y proximity;scroll-padding-top:calc(var(--ca-nav-h,62px) + var(--ca-strip-h))}
-.home-hero_component{scroll-snap-align:start;scroll-margin:300px 0 100svh}
 .discovery_head{scroll-snap-align:start;scroll-snap-stop:always}
 .ca-shead{scroll-snap-align:start;scroll-snap-stop:always;scroll-margin-top:12px}
 
